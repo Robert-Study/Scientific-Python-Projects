@@ -1,36 +1,19 @@
 """Intermediate Worksheets 1–6 (Merged Showcase)
 
-This single file consolidates Worksheets 6 → 1 (most advanced first) for GitHub
-showcase and code review.
-
-- Light refactor only: standardised imports, removed duplicate imports, kept
-  the original execution flow inside each worksheet function.
-- Data files and the course-provided `module_engine` are NOT included in this repository
-  (academic integrity / plagiarism prevention).
-
-This code is intended for reading, not execution.
+This single file consolidates Worksheets 6 → 1 (most advanced first)
+Data files are NOT included provided
 """
-
-from __future__ import annotations
 
 import math
 import random
 from pathlib import Path
-
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Data files are not distributed with this showcase repository.
-DATA_DIR = Path("data")  # placeholder path for original notebooks
+DATA_DIR = Path("data.txt")  # placeholder path for original notebooks
 
-
-
-# =============================================================================
 # Worksheet 6
-# =============================================================================
-
 def worksheet_6() -> None:
-    """Worksheet 6 (showcase)."""
     rng = np.random.default_rng()
 
     trails = 1000000
@@ -163,13 +146,8 @@ def worksheet_6() -> None:
     plt.show()
 
 
-
-# =============================================================================
 # Worksheet 5
-# =============================================================================
-
 def worksheet_5() -> None:
-    """Worksheet 5 (showcase)."""
     mu1 = -np.pi                      #parameters
     mu2 = np.pi
     sigma = np.sqrt(2)
@@ -272,13 +250,8 @@ def worksheet_5() -> None:
     plt.show()
 
 
-
-# =============================================================================
 # Worksheet 4
-# =============================================================================
-
 def worksheet_4() -> None:
-    """Worksheet 4 (showcase)."""
     def bisection_method(f, x1, x2, max_iterations, atol):                #function to find the roots of a function (part a)
         i = 0                                #iteration number
         while i < max_iterations:
@@ -362,13 +335,8 @@ def worksheet_4() -> None:
     print(f"The Madelung constant for sodium chloride with L = {L} is approximately: {Madelung}")
 
 
-
-# =============================================================================
 # Worksheet 3
-# =============================================================================
-
 def worksheet_3() -> None:
-    """Worksheet 3 (showcase)."""
     X = np.loadtxt("dice_rolls.txt", dtype=int)
 
 
@@ -459,13 +427,8 @@ def worksheet_3() -> None:
 
 
 
-# =============================================================================
 # Worksheet 2
-# =============================================================================
-
 def worksheet_2() -> None:
-    """Worksheet 2 (showcase)."""
-    #question a
     print("n     fn")
     n = 0
     fn = 0
@@ -546,7 +509,6 @@ def worksheet_2() -> None:
 # =============================================================================
 
 def worksheet_1() -> None:
-    """Worksheet 1 (showcase)."""
     result1 = 2 * np.pi
     result2 = np.pi / 2
     result3 = np.pi ** 2
@@ -594,8 +556,3 @@ def worksheet_1() -> None:
 
     print("subbing root 1 back in:", result1, " ~ 0")
     print("subbing root 2 back in:", result2, " ~ 0")
-
-
-# =============================================================================
-# End of file
-# =============================================================================
