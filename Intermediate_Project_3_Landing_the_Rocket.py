@@ -1,675 +1,529 @@
 """
 Intermediate Project 3: Landing the Rocket (90%)
 
-Showcase-only source converted from a Jupyter notebook.
-Any student ID fields have been intentionally left blank.
+Aim
+---------------------------
+Characterise a 2D rocket dynamics simulator and design thrust-control strategies to:
+1) Identify thruster offsets, maximum effective thrust, and rocket mass.
+2) Produce controlled horizontal motion profiles (e.g., accelerate → stop at a target).
+3) Implement feedback controllers to stabilise motion about a moving target position.
+4) Apply a controller to repeated “drop” scenarios and evaluate landing success.
 
-NOTE: This code references the course-provided `module_engine` package in places.
-The repository does not include `module_engine` (academic integrity / plagiarism prevention).
+Model assumptions
+---------------------------
+- The simulator advances the rocket state in discrete time steps (dt = 1/60 s).
+- Left and right thrusters produce horizontal forces with:
+  - an activation offset (below which no net acceleration occurs),
+  - a maximum effective thrust
+  - approximately linear mapping between effective force and acceleration: F = m a.
+
+Workflow
+---------------------------
+A) Warm-up: apply test thrust sequences and inspect flight data.
+B) Experiments: estimate offsets, mass, and maximum effective thrust.
+C) Construct thrust-mapping utilities: acceleration -> commanded thrust.
+D) Control tasks:
+   1) Open-loop “there and stop” to a fixed target (100 m).
+   2) Position feedback (undamped) and then damped feedback (with velocity term).
+   3) Multi-flight drop test: track success rate against a moving platform.
 """
-
-from __future__ import annotations
-
 import numpy as np
 import matplotlib.pyplot as plt
 from module_engine.assignment import Rocket
 
+my_rocket = Rocket()
 
-# Do not alter any of the code within this cell other than the value of studentID
+# Global plotting settings
+plt.rcParams["font.size"] = 20
+plt.rcParams["axes.formatter.useoffset"] = False
 
+# Utility helpers
+def finite_difference_velocity(t: np.ndarray, x: np.ndarray) -> np.ndarray:
+    return np.diff(x) / np.diff(t)
 
-# Setting global plotting settings
-plt.rcParams['font.size'] = 20
-plt.rcParams['axes.formatter.useoffset'] = False
-
-# Enter your student ID here
-studentID = ""  # intentionally left blank for showcase
-
-# Your Rocket object to be used throughout this assignment
-# Please do NOT change the line below! Your studentID must be inserted ABOVE
-my_rocket = Rocket(studentID)
-
-N = 0           # Step counter
-Nmax = 300      # Number of tracking steps of 1/60 s duration
-thrust = 2000.0 # A random test thrust
-
-my_rocket.reset('space')
-# Apply right thrust for a while
-while N<Nmax:
-    N+=1
-    pos = my_rocket.advance(0.0,thrust)
-# Now apply left thrust
-N=0
-while N<2*Nmax:
-    N+=1
-    pos = my_rocket.advance(thrust,0.0)
-# Apply right thrust again
-N=0
-while N<Nmax:
-    N+=1
-    pos = my_rocket.advance(0.0,thrust)
-
-track = my_rocket.get_flight_data()
-
-t=track[:,0]
-x=track[:,1]
-y=track[:,2]
-# Plot the x-position as a function of time
-fig = plt.figure(figsize=(15,5))
-ax = plt.plot(t, x, 'b-')
-plt.title('Rocket coordinate: x(t)')
-plt.xlabel('Time [s]')
-plt.ylabel('x position [m]')
-plt.grid()
-plt.show()
-
-# Compute the speed and acceleration of our rocket
-v = np.diff(x)/np.diff(t)
-a = np.diff(v)/np.diff(t)[1:]
-
-fig = plt.figure(figsize=(15,5))
-# Plot velocity and acceleration as a function of time
-plt.plot(t[1:],v, 'b-', label='Velocity')
-plt.plot(t[2:],a, 'r-', label='Acceleration')
-plt.title('Rocket horizontal velocity and acceleration')
-plt.xlabel('Time [s]')
-plt.ylabel('a.u.')
-plt.grid()
-plt.legend()
-plt.show()
-
-# Experiment 1 - Observing motion with only one thruster on (right) at constant thrust output
-# Right: min thrust 619.68 -> accel; Left: min below 774.38 -> accel
-
-my_rocket.reset('space')
-Nmax = 1000
-N = 0
-thrust_left = 0
-thrust_right = 619.68  # min right thrust for accel
+def finite_difference_acceleration(t: np.ndarray, x: np.ndarray) -> np.ndarray:
+    v = finite_difference_velocity(t, x)
+    return np.diff(v) / np.diff(t)[1:]
 
 
-while N < Nmax:
-    N += 1
-    pos = my_rocket.advance(thrust_left, thrust_right)
+# A) Warm-up: simple thrust sequence and basic diagnostics
+def warmup_demo() -> None:
+    Nmax = 300
+    thrust = 2000.0
 
-track = my_rocket.get_flight_data()  # (t,x,y)
+    my_rocket.reset("space")
 
-x = track[:, 1]
-y = track[:, 2]
-t = track[:, 0]
+    # Right thrust
+    for _ in range(Nmax):
+        my_rocket.advance(0.0, thrust)
 
+    # Left thrust
+    for _ in range(2 * Nmax):
+        my_rocket.advance(thrust, 0.0)
 
-plt.figure(figsize=(20, 5))
-plt.plot(t, x)
-plt.xlabel('Time')
-plt.ylabel('x-pos')
-plt.show()
+    # Right thrust again
+    for _ in range(Nmax):
+        my_rocket.advance(0.0, thrust)
 
-v = np.diff(x) / np.diff(t)
-a = np.diff(v) / np.diff(t)[1:]
-
-print("max displacement:", max(abs(x)))
-# i tried 'print(max(abs(x)))' for F(max), but it was imprecise
-# max abs(x) is 649.432m at max thrust (F(max))
-# Left max at 8980N, right max at 8826N, F(max) = 8206N
-
-# Experiment 2 - Equal thrust applied to both thrusters to get accerlation and mass
-
-my_rocket.reset('space')
-F0_left = 774.38  # Offset for left thruster
-F0_right = 619.68  # Offset for right thruster
-N = 0
-Nmax = 500
-thrust_left = thrust_right = 7000 #setting to any value above offsets but below F(max) gives same acceleration
-
-#-------
-
-while N < Nmax:
-    N += 1
-    pos = my_rocket.advance(thrust_left, thrust_right)  # Both thrusters active
-track = my_rocket.get_flight_data()  # Data in form (t, x, y)
-
-t = track[:, 0]
-x = track[:, 1]
-y = track[:, 2]
-
-plt.figure(figsize=(20, 5))
-plt.plot(t, x)
-plt.xlabel('Time')
-plt.ylabel('x-pos')
-plt.grid()
-plt.show()
-
-v = np.diff(x) / np.diff(t)
-a = np.diff(v) / np.diff(t)[1:]
-
-plt.figure(figsize=(20, 5))
-plt.plot(t[1:], v)
-plt.grid()
-plt.xlabel('Time')
-plt.ylabel('Velocity')
-plt.show()
-
-plt.figure(figsize=(20, 5))
-plt.plot(t[2:], a)
-plt.grid()
-plt.xlabel('Time')
-plt.ylabel('Acceleration')
-plt.show()
-
-acceleration = np.mean(a)
-resultant_force = (thrust_left - F0_left) - (thrust_right - F0_right)  #with left as positive
-mass = resultant_force / acceleration
-
-print("mass:",mass," / acceleration:", acceleration," / resultant force:", resultant_force)
-
-# Experiment 3 - Acceleration vs thrust to get Fmax for both thrusters
-thrusts= np.arange(300, 10000, 10)  # Test thrust values through range   # 300,10000 by 10 incremental
-
-accelerations_left = []
-for thrust in thrusts:
-    my_rocket.reset('space')
-    N = 0
-    Nmax = 10
-    while N < Nmax:
-        N += 1
-        my_rocket.advance(thrust, 0)
     track = my_rocket.get_flight_data()
     t = track[:, 0]
     x = track[:, 1]
-    v = np.diff(x) / np.diff(t)
-    a = np.diff(v) / np.diff(t)[1:]
-    accelerations_left.append(np.mean(a))
 
-accelerations_right = []
-for thrust in thrusts:
-    my_rocket.reset('space')
-    N = 0
-    Nmax = 10
-    while N < Nmax:
-        N += 1
-        my_rocket.advance(0, thrust)
+    plt.figure(figsize=(15, 5))
+    plt.plot(t, x)
+    plt.title("Rocket coordinate: x(t)")
+    plt.xlabel("Time [s]")
+    plt.ylabel("x position [m]")
+    plt.grid(True)
+    plt.show()
+
+    v = finite_difference_velocity(t, x)
+    a = finite_difference_acceleration(t, x)
+
+    plt.figure(figsize=(15, 5))
+    plt.plot(t[1:], v, label="Velocity")
+    plt.plot(t[2:], a, label="Acceleration")
+    plt.title("Rocket horizontal velocity and acceleration")
+    plt.xlabel("Time [s]")
+    plt.ylabel("a.u.")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+# B) Experiments: offsets, mass, and maximum effective thrust
+def experiment_offset_right_only() -> float:
+    """Observe motion with only the right thruster on at constant thrust."""
+    my_rocket.reset("space")
+    Nmax = 1000
+    thrust_left = 0.0
+    thrust_right = 619.68  # measured minimum right thrust for acceleration
+
+    for _ in range(Nmax):
+        my_rocket.advance(thrust_left, thrust_right)
+
     track = my_rocket.get_flight_data()
     t = track[:, 0]
     x = track[:, 1]
-    v = np.diff(x) / np.diff(t)
-    a = np.diff(v) / np.diff(t)[1:]
-    accelerations_right.append(np.mean(a))
 
-plt.figure(figsize=(20, 5))
-plt.plot(thrusts, accelerations_left)
-plt.ylabel('Acceleration m/s2')
-plt.axvline(x=774.38, linestyle='--')
-plt.axvline(x=8980, linestyle='--')
-plt.grid()
-plt.show()
-print("The portion where thrust is being applied is 8980 - 774:", 8980-774)
+    plt.figure(figsize=(20, 5))
+    plt.plot(t, x)
+    plt.xlabel("Time [s]")
+    plt.ylabel("x position [m]")
+    plt.grid(True)
+    plt.show()
 
-plt.figure(figsize=(20, 5))
-plt.plot(thrusts, accelerations_right)
-plt.ylabel('Acceleration m/s2')
-plt.grid()
-plt.axvline(x=619.68)
-plt.axvline(x=8826)
-plt.show()
-print("The maximum effective thrust is 8826 - 620:", 8826-620)
-print("Hence Fmax = 8206")
-print("Fmax/m =", 8206/1784, "  /  max acceleration for left thruster only:", max(accelerations_left), "  /  right:", min(accelerations_right))
+    print("max displacement:", float(np.max(np.abs(x))))
+    return thrust_right
 
-# Enter the results from your experiments into the variables below
-# You may type the numerical values with the requested accuracy
-# or you can assign these variables to another variable computed above
-# Do not change the names of the variables, and do not reuse these variables later
+
+def experiment_mass_from_equal_thrust() -> float:
+    """
+    Apply equal thrust to both thrusters above offsets and infer mass from resulting acceleration.
+    (Uses the same logic as your notebook; kept as-is.)
+    """
+    my_rocket.reset("space")
+
+    F0_left = 774.38
+    F0_right = 619.68
+
+    thrust_left = 7000.0
+    thrust_right = 7000.0
+
+    Nmax = 500
+    for _ in range(Nmax):
+        my_rocket.advance(thrust_left, thrust_right)
+
+    track = my_rocket.get_flight_data()
+    t = track[:, 0]
+    x = track[:, 1]
+
+    v = finite_difference_velocity(t, x)
+    a = finite_difference_acceleration(t, x)
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(t, x)
+    plt.xlabel("Time [s]")
+    plt.ylabel("x position [m]")
+    plt.grid(True)
+    plt.show()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(t[1:], v)
+    plt.grid(True)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Velocity")
+    plt.show()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(t[2:], a)
+    plt.grid(True)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Acceleration")
+    plt.show()
+
+    acceleration = float(np.mean(a))
+    resultant_force = (thrust_left - F0_left) - (thrust_right - F0_right)  # left positive
+    mass = resultant_force / acceleration
+
+    print("mass:", mass, "/ acceleration:", acceleration, "/ resultant force:", resultant_force)
+    return mass
+
+
+def experiment_acceleration_vs_thrust() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Scan thrust range to estimate saturation (Fmax) behaviour."""
+    thrusts = np.arange(300.0, 10000.0, 10.0)
+
+    acc_left = []
+    for thrust in thrusts:
+        my_rocket.reset("space")
+        for _ in range(10):
+            my_rocket.advance(thrust, 0.0)
+        track = my_rocket.get_flight_data()
+        t = track[:, 0]
+        x = track[:, 1]
+        a = finite_difference_acceleration(t, x)
+        acc_left.append(float(np.mean(a)))
+
+    acc_right = []
+    for thrust in thrusts:
+        my_rocket.reset("space")
+        for _ in range(10):
+            my_rocket.advance(0.0, thrust)
+        track = my_rocket.get_flight_data()
+        t = track[:, 0]
+        x = track[:, 1]
+        a = finite_difference_acceleration(t, x)
+        acc_right.append(float(np.mean(a)))
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(thrusts, acc_left)
+    plt.ylabel("Acceleration [m/s^2]")
+    plt.axvline(x=774.38, linestyle="--")
+    plt.axvline(x=8980.0, linestyle="--")
+    plt.grid(True)
+    plt.show()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(thrusts, acc_right)
+    plt.ylabel("Acceleration [m/s^2]")
+    plt.axvline(x=619.68, linestyle="--")
+    plt.axvline(x=8826.0, linestyle="--")
+    plt.grid(True)
+    plt.show()
+
+    return thrusts, np.array(acc_left), np.array(acc_right)
+
+# C) Identified parameters (from experiments)
 
 o_left = 774.38
 o_right = 619.68
 m = 1784.0377
 tmax = 8206
 
-#thrust -> acceleration
-def acc2thrust_left(acceleration):
-    F0_left = 774.38  # Offset for left thruster
-    Fmax = 8206         # Maximum achievable thrust
-    m = 1784.0377     # Mass of the rocket
-
-    # List to store the thrust values for each acceleration
-    thrust = []
-    for a in acceleration:
-        if a == 0:
-            thrust.append(F0_left)
-        elif a <= (Fmax) / m:
-            thrust.append(m * a + F0_left)
-        else:
-            thrust.append(None) #acceleration shouldn't be able to exceed 4.59, returns None to help with bugfixing
-
-    return np.array(thrust) #returns thrust inputed to the thruster not the effective output thrust
-
-def acc2thrust_right(acceleration):                  #copy and pasted just changed the numbers
-    F0_right = 619.68  # Offset for right thruster
-    Fmax = 8206        # Maximum achievable thrust
-    m = 1784.0377        # Mass of the rocket
-
-    # List to store the thrust values for each acceleration
-    thrust = []
-    for a in acceleration:
-        if a == 0:
-            thrust.append(F0_right)
-        elif a <= (Fmax) / m:
-            thrust.append(m * a + F0_right)
-        else:
-            thrust.append(None)
-
-    return np.array(thrust)
-
-#testing the above functions
-accelerations = np.linspace(0, 5, 10000)
-
-thrusts_left = acc2thrust_left(accelerations)
-thrusts_right = acc2thrust_right(accelerations)
-
-#####
-
-thrusts = range(0, 10000, 10)
-
-accelerations_left = []
-for thrust in thrusts:
-    my_rocket.reset('space')
-    N = 0
-    Nmax = 10
-    while N < Nmax:
-        N += 1
-        my_rocket.advance(thrust, 0)
-    track = my_rocket.get_flight_data()
-
-
-    t = track[:, 0]
-    x = track[:, 1]
-    v = np.diff(x) / np.diff(t)
-    a = np.diff(v) / np.diff(t)[1:]
-    accelerations_left.append(np.mean(a))
-
-accelerations_right = []
-for thrust in thrusts:
-    my_rocket.reset('space')
-    N = 0
-    Nmax = 10
-    while N < Nmax:
-        N += 1
-        my_rocket.advance(0, thrust)
-    track = my_rocket.get_flight_data()
-
-
-    t = track[:, 0]
-    x = track[:, 1]
-    v = np.diff(x) / np.diff(t)
-    a = np.diff(v) / np.diff(t)[1:]
-    accelerations_right.append(np.mean(a))
-accelerations_right = [abs(x) for x in accelerations_right]
-
-
-#####
-
-
-plt.figure(figsize=(20, 5))
-plt.plot(thrusts_left, accelerations)
-plt.scatter(thrusts_left, accelerations)
-plt.ylabel("Acceleration")
-plt.axvline(x=774.38, linestyle='--')
-plt.axvline(x=8980, linestyle='--')
-plt.xlim(0, 10000)
-plt.ylim(-0.5, 5)
-plt.grid()
-plt.show()
-
-plt.figure(figsize=(20, 5))
-plt.plot(thrusts_right, accelerations)
-plt.scatter(thrusts_right, accelerations)
-plt.ylabel("Acceleration")
-plt.xlim(0, 10000)
-plt.ylim(-0.5, 5)
-plt.axvline(x=619.68)
-plt.axvline(x=8826)
-plt.show()
-
-
-######
-
-
-plt.figure(figsize=(20, 5))
-plt.plot(thrusts, accelerations_left)
-plt.scatter(thrusts, accelerations_left)
-plt.axvline(x=774.38, linestyle='--')
-plt.axvline(x=8980, linestyle='--')
-plt.ylabel('Acceleration')
-plt.xlim(0, 10000)
-plt.ylim(-0.5, 5)
-plt.grid()
-plt.show()
-
-plt.figure(figsize=(20, 5))
-plt.plot(thrusts, accelerations_right)
-plt.scatter(thrusts, accelerations_right)
-plt.ylabel('Acceleration')
-plt.xlim(0, 10000)
-plt.ylim(-0.5, 5)
-plt.axvline(x=619.68)
-plt.axvline(x=8826)
-plt.show()
-
-# Your code for 'there and stop' / Accelerate to 100 m, then decelerate to stop
-my_rocket.reset('space')
-F0_right = 619.68
-F0_left = 774.38
-m = 1784.0377
-Fmax = 8206
-total_time = 30
-dt = 1 / 60  #applies for this long so setting it to increment
-left_thrust = acc2thrust_left([1])[0]    #thrust in left booster to produce 1m/s^2 of acceleration
-right_thrust = acc2thrust_right([1])[0]    #thrust in right booster to produce 1m/s^2 of decceleration
-
-
-deceleration_thrust = -acc2thrust_right([1])
-
-x = 0 #initial constraints
-v = 0
-t = 0
-
-positions = []
-times = []
-velocities = []
-
-for i in range(10 * 60): #10s of acceleration
-    t += dt
-    A_l = (left_thrust - F0_left) / m  #alternatively you can just use 1 here instead of using thrust input
-    v += A_l * dt
-    x += v * dt
-    times.append(t)
-    velocities.append(v)
-    positions.append(x)
-    my_rocket.advance(left_thrust, 0)
-
-for i in range(10 * 60): #10s of decceleration
-    t += dt
-    a_right = -(right_thrust - F0_right) / m  #negative as right booster acts in opposite direction
-    v += a_right * dt
-    x += v * dt
-    times.append(t)
-    positions.append(x)
-    velocities.append(v)
-    my_rocket.advance(0,right_thrust)
-
-
-for i in range(10 * 60): #10s stationairy
-    t += dt
-    acceleration = 0
-    v += acceleration * dt
-    x += v * dt
-    positions.append(x)
-    velocities.append(v)
-    times.append(t)
-    my_rocket.advance(0,0)
-
-positions = np.array(positions)
-velocities = np.array(velocities)
-times = np.array(times)
-
-final_velocity = velocities[-1]
-final_position = positions[-1]
-
-
-print(f"Position: {final_position:.15f} m")
-print(f"Velocity: {final_velocity:.15f} m/s")
-
-# The following records the track data to be marked.
-# Make sure you call reset() before, but not during or after your flight!
-student_track1 = my_rocket.get_flight_data()
-
-# Cell for plotting the track to check results
-plt.figure(figsize=(20, 5))
-plt.plot(times, positions, label='Position m')
-plt.xlabel('Time (s)')
-plt.ylabel('Position (m)')
-plt.title('Rocket Position vs Time')
-plt.grid()
-plt.axhline(100, color='r', label='Target Position (100m)')
-plt.show()
-
-plt.figure(figsize=(20, 5))
-plt.title('Rocket Velocity vs Time')
-plt.plot(times, velocities, label='Velocity m/s')
-plt.xlabel('Time s')
-plt.ylabel('Velocity m/s')
-plt.grid()
-plt.show()
-
-# Student code for position-based feedback,
-# do *not* change the name or arguments of the function.
-def position_feedback(pos, target):
-    gain = 0.02               #to scale (don't go too much higher or else thrust > Fmax)
-    target_acceleration = gain * (target - pos)
-    L = R = 0
-
-    if target_acceleration > 0:
-        L = acc2thrust_left([target_acceleration])[0] #acceleration converted to thrust
-
-    elif target_acceleration < 0:
-        R = acc2thrust_right([-target_acceleration])[0] #returns a positive thrust due to -
-
-    return L, R  #this is raw thrust not effective output
-
-# Student code for creating flight path with an oscillation around target
-my_rocket.reset("space")
-
-pos = 0
-target = 100
-max_i = 3600
-i = 0
-t_step = 1/60
-velocity = 0
-acceleration = 0
-
-positions = []
-time = []
-
-
-while i < max_i:
-    time.append(i * t_step)
-    positions.append(pos)
-    left_thrust, right_thrust = position_feedback(pos, target)
-
-    my_rocket.advance(left_thrust, right_thrust)
-    if left_thrust > 0:
-        effective_force = +(left_thrust - 774.38) #accounting for offsets
-    elif right_thrust > 0:
-        effective_force = -(right_thrust - 619.68) #negative as right acts leftwards
-
-    acceleration = effective_force / 1784.0377   #F=ma
-    velocity += acceleration * t_step
-    pos += velocity * t_step  # Update position assuming constant velocity in the small time step
-    i += 1
-
-# The following records the track data to be marked, Make sure
-# that you do not call `reset()` during or after your flight!
-student_track2 = my_rocket.get_flight_data()
-
-plt.figure(figsize=(20, 5))
-plt.plot(time, positions)
-plt.xlabel('Time (s)')
-plt.ylabel('Position in m')
-plt.title('Position vs Time')
-plt.axhline(100, color='r')
-plt.show()
-
-def damped_feedback(pos, v, target):   #note i added in the constraint where if acceleration tries to exceed maximum then
-    v_gain = 0.08                   #it limits the output to the max thrust
-    pos_gain = 0.15
-
-    target_acceleration = pos_gain * (target - pos) - v_gain * v
-    L = R = 0
-
-    if target_acceleration > 4.599316: #max a
-        L = 8206 + 774  #Fmax + offset
-    elif target_acceleration > 0:
-        L = acc2thrust_left([target_acceleration])[0]
-    elif target_acceleration < -4.599316:
-        R = 8206 + 619 #Fmax + offset
-    elif target_acceleration < 0:
-        R = acc2thrust_right([-target_acceleration])[0] #returns positive value as that is needed for .advance()
-
-    return L,R    #doesn't account for offsets
-
-# Student code to create flight track with damped oscillation
-
-my_rocket.reset("space")
-pos = 0
-velocity = 0
-acceleration = 0
-target = 100
-max_i = 10000
-i = 0
-t_step = 1 / 60
-positions = []
-time = []
-
-while i < max_i:
-    positions.append(pos)
-    time.append(i * t_step)
-    left_thrust, right_thrust = damped_feedback(pos, velocity, target)
-    my_rocket.advance(left_thrust, right_thrust)
-
-    if left_thrust > 0:
-        effective_force = +(left_thrust - 774.38) #account for offsets here
-    elif right_thrust > 0:
-        effective_force = -(right_thrust - 619.68) #offsets and set to negative as right thruster
-
-    acceleration = effective_force / 1784.0377
-    velocity += acceleration * t_step
-    pos += velocity * t_step  #(small t_steps so can assume velocity is constant)
-    i += 1
-
-# The following records the track data to be marked, Make sure
-# that you do not call `reset()` during or after your flight!
-student_track3 = my_rocket.get_flight_data()
-
-plt.figure(figsize=(20, 5))
-plt.plot(time, positions)
-plt.axhline(100, color='r')
-plt.xlabel('Time (s)')
-plt.ylabel('Position (m)')
-plt.title('Position vs Time')
-plt.grid()
-plt.show()
-
-print("final position is:", pos, "  /  final velocity is:", velocity)
-
-def acc2thrust_left(acceleration):                   #all functions copy and pasted from earlier for sake of convenience
-    F0_left = 774.38  # Offset for left thruster
-    Fmax = 8206         # Maximum achievable thrust
-    m = 1784.0377      # Mass of the rocket
-
-    # List to store the thrust values for each acceleration
-    thrust = []
-    for a in acceleration:
-        if a == 0:
-            thrust.append(F0_left)
-        elif a <= (Fmax) / m:
-            thrust.append(m * a + F0_left)
-        else:
-            thrust.append(None) #acceleration shouldn't be able to exceed 4.59, returns None to help with bugfixing
-
-    return np.array(thrust) #returns thrust inputed to the thruster not the effective output thrust
-
-def acc2thrust_right(acceleration):
-    F0_right = 619.68  # Offset for right thruster
-    Fmax = 8206        # Maximum achievable thrust
-    m = 1784.0377        # Mass of the rocket
-
-    # List to store the thrust values for each acceleration
-    thrust = []
-    for a in acceleration:
-        if a == 0:
-            thrust.append(F0_right)
-        elif a <= (Fmax) / m:
-            thrust.append(m * a + F0_right)
-        else:
-            thrust.append(None)
-
-    return np.array(thrust)
-
-def damped_feedback(pos, v, target):
+
+# D) Thrust mapping: acceleration -> commanded thrust
+
+def acc2thrust_left(acceleration: np.ndarray | list[float]) -> np.ndarray:
+    """
+    Convert desired acceleration(s) to commanded LEFT thruster thrust.
+    Returns commanded thrust (including offset).
+    """
+    acceleration = np.asarray(acceleration, dtype=float)
+    out = np.empty_like(acceleration)
+
+    a_max = tmax / m
+    out[acceleration == 0] = o_left
+    mask = (acceleration > 0) & (acceleration <= a_max)
+    out[mask] = m * acceleration[mask] + o_left
+    out[acceleration > a_max] = np.nan  # out-of-range indicator
+    out[acceleration < 0] = np.nan
+    return out
+
+
+def acc2thrust_right(acceleration: np.ndarray | list[float]) -> np.ndarray:
+    """
+    Convert desired acceleration(s) to commanded RIGHT thruster thrust.
+    Returns commanded thrust (including offset).
+    """
+    acceleration = np.asarray(acceleration, dtype=float)
+    out = np.empty_like(acceleration)
+
+    a_max = tmax / m
+    out[acceleration == 0] = o_right
+    mask = (acceleration > 0) & (acceleration <= a_max)
+    out[mask] = m * acceleration[mask] + o_right
+    out[acceleration > a_max] = np.nan
+    out[acceleration < 0] = np.nan
+    return out
+
+# Extension task 1) Open-loop “there and stop”: accelerate → decelerate → hold
+
+def there_and_stop(target_x: float = 100.0) -> None:
+    my_rocket.reset("space")
+
+    dt = 1.0 / 60.0
+    a_cmd = 1.0  # m/s^2
+
+    left_thrust = acc2thrust_left([a_cmd])[0]
+    right_thrust = acc2thrust_right([a_cmd])[0]
+
+    x = 0.0
+    v = 0.0
+    t = 0.0
+
+    positions, velocities, times = [], [], []
+
+    # 10 s accelerate
+    for _ in range(int(10 / dt)):
+        t += dt
+        a_eff = (left_thrust - o_left) / m
+        v += a_eff * dt
+        x += v * dt
+        times.append(t); velocities.append(v); positions.append(x)
+        my_rocket.advance(left_thrust, 0.0)
+
+    # 10 s decelerate
+    for _ in range(int(10 / dt)):
+        t += dt
+        a_eff = -(right_thrust - o_right) / m
+        v += a_eff * dt
+        x += v * dt
+        times.append(t); velocities.append(v); positions.append(x)
+        my_rocket.advance(0.0, right_thrust)
+
+    # 10 s hold
+    for _ in range(int(10 / dt)):
+        t += dt
+        x += v * dt
+        times.append(t); velocities.append(v); positions.append(x)
+        my_rocket.advance(0.0, 0.0)
+
+    positions = np.array(positions)
+    velocities = np.array(velocities)
+    times = np.array(times)
+
+    print(f"Position: {positions[-1]:.15f} m")
+    print(f"Velocity: {velocities[-1]:.15f} m/s")
+
+    global student_track1
+    student_track1 = my_rocket.get_flight_data()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(times, positions, label="Position [m]")
+    plt.axhline(target_x, color="r", label=f"Target ({target_x} m)")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Position [m]")
+    plt.title("There-and-stop: position vs time")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(times, velocities, label="Velocity [m/s]")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Velocity [m/s]")
+    plt.title("There-and-stop: velocity vs time")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
+# Extension 2) Feedback controllers
+def position_feedback(pos: float, target: float) -> tuple[float, float]:
+    """Simple proportional controller: acceleration ∝ (target - position)."""
+    gain = 0.02
+    target_acc = gain * (target - pos)
+
+    L = 0.0
+    R = 0.0
+    if target_acc > 0:
+        L = acc2thrust_left([target_acc])[0]
+    elif target_acc < 0:
+        R = acc2thrust_right([-target_acc])[0]
+    return L, R
+
+
+def damped_feedback(pos: float, v: float, target: float) -> tuple[float, float]:
+    """PD-style controller: acceleration from position error and velocity damping."""
     pos_gain = 0.15
     v_gain = 0.40
-    target_acceleration = pos_gain * (target - pos) - v_gain * v
-    L = R = 0
 
-    if target_acceleration > 4.599316: #max a
-        L = 8206 + 774          #max Thrust for L
-    elif target_acceleration > 0:
-        L = acc2thrust_left([target_acceleration])[0]
-    elif target_acceleration < -4.599316:
-        R = 8206 + 619
-    elif target_acceleration < 0:
-        R = acc2thrust_right([-target_acceleration])[0]
+    target_acc = pos_gain * (target - pos) - v_gain * v
 
-    return L,R
+    a_max = tmax / m
+    L = 0.0
+    R = 0.0
 
-my_rocket.reset_flight_counter()
-Nflights = 40
-tracks = []
-N = 0
-dt = 1 / 60
+    if target_acc > a_max:
+        L = tmax + o_left
+    elif target_acc > 0:
+        L = acc2thrust_left([target_acc])[0]
+    elif target_acc < -a_max:
+        R = tmax + o_right
+    elif target_acc < 0:
+        R = acc2thrust_right([-target_acc])[0]
 
-while N < Nflights:
-    my_rocket.reset('drop')
-    x, y = 100, 2000
-    v_x, v_y, t = 0, 0, 0
-    prev_x, prev_y = x, y
-    initial_target_x = my_rocket.get_platform_pos()[0]
+    return L, R
 
-    while y > 0 and t <= 25:  # Exit if y <= 0 or t exceeds 25 seconds
-        target_x = my_rocket.get_platform_pos()[0]
-        left_thrust, right_thrust = damped_feedback(x, v_x, target_x)
-        data = my_rocket.advance(left_thrust, right_thrust)
-        v_x = (x - prev_x) / dt
-        v_y = (y - prev_y) / dt
+
+def run_position_feedback_demo(target: float = 100.0, steps: int = 3600) -> None:
+    my_rocket.reset("space")
+
+    dt = 1.0 / 60.0
+    pos = 0.0
+    v = 0.0
+
+    positions, times = [], []
+
+    for i in range(steps):
+        times.append(i * dt)
+        positions.append(pos)
+
+        L, R = position_feedback(pos, target)
+        my_rocket.advance(L, R)
+
+        # approximate state update (kept consistent with your original approach)
+        if L > 0:
+            F = +(L - o_left)
+        elif R > 0:
+            F = -(R - o_right)
+        else:
+            F = 0.0
+
+        a = F / m
+        v += a * dt
+        pos += v * dt
+
+    global student_track2
+    student_track2 = my_rocket.get_flight_data()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(times, positions)
+    plt.axhline(target, color="r")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Position [m]")
+    plt.title("Position feedback (P-control)")
+    plt.grid(True)
+    plt.show()
+
+
+def run_damped_feedback_demo(target: float = 100.0, steps: int = 10000) -> None:
+    my_rocket.reset("space")
+
+    dt = 1.0 / 60.0
+    pos = 0.0
+    v = 0.0
+
+    positions, times = [], []
+
+    for i in range(steps):
+        times.append(i * dt)
+        positions.append(pos)
+
+        L, R = damped_feedback(pos, v, target)
+        my_rocket.advance(L, R)
+
+        if L > 0:
+            F = +(L - o_left)
+        elif R > 0:
+            F = -(R - o_right)
+        else:
+            F = 0.0
+
+        a = F / m
+        v += a * dt
+        pos += v * dt
+
+    global student_track3
+    student_track3 = my_rocket.get_flight_data()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(times, positions)
+    plt.axhline(target, color="r")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Position [m]")
+    plt.title("Damped feedback (PD-style)")
+    plt.grid(True)
+    plt.show()
+
+    print("final position is:", pos, "/ final velocity is:", v)
+
+# Extension 3) Drop test: repeated flights and success counter
+
+def drop_test(Nflights: int = 40) -> None:
+    my_rocket.reset_flight_counter()
+
+    dt = 1.0 / 60.0
+    tracks = []
+
+    for _ in range(Nflights):
+        my_rocket.reset("drop")
+
+        x, y = 100.0, 2000.0
+        v_x, v_y = 0.0, 0.0
         prev_x, prev_y = x, y
-        x, y = data[0], data[1]
-        t += dt  # Increment time
+        t = 0.0
 
-    tracks.append(my_rocket.get_flight_data())
-    N += 1
+        initial_target_x = my_rocket.get_platform_pos()[0]
 
-data = tracks[-1]
-times = data[:, 0]
-x_pos = data[:, 1]
-y_pos = data[:, 2]
-final_target_x = my_rocket.get_platform_pos()[0]
+        while y > 0 and t <= 25.0:
+            target_x = my_rocket.get_platform_pos()[0]
+            L, R = damped_feedback(x, v_x, target_x)
+
+            data = my_rocket.advance(L, R)
+            x_new, y_new = data[0], data[1]
+
+            v_x = (x_new - prev_x) / dt
+            v_y = (y_new - prev_y) / dt
+
+            prev_x, prev_y = x_new, y_new
+            x, y = x_new, y_new
+            t += dt
+
+        tracks.append(my_rocket.get_flight_data())
+
+    data = tracks[-1]
+    times = data[:, 0]
+    x_pos = data[:, 1]
+    y_pos = data[:, 2]
+    final_target_x = my_rocket.get_platform_pos()[0]
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(x_pos, y_pos, label="Flight Path")
+    plt.axvline(x=initial_target_x, color="r", linestyle="--", label="Initial Target")
+    plt.axvline(x=final_target_x, color="g", linestyle="--", label="Final Target")
+    plt.axhline(y=0, color="k")
+    plt.title("Rocket Flight Path (final flight)")
+    plt.xlabel("Horizontal Position [m]")
+    plt.ylabel("Vertical Position [m]")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(times, x_pos, label="Rocket Position")
+    plt.axhline(y=initial_target_x, color="y", linestyle="--", label="Initial Target")
+    plt.axhline(y=final_target_x, color="g", linestyle="--", label="Final Target")
+    plt.title("Rocket Horizontal Position vs Time (final flight)")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Horizontal Position [m]")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+    print("Successful landings:", my_rocket.successful_landing_counter)
+
+# Main (module_engine required)
+def main() -> None:
+    warmup_demo()
+    experiment_offset_right_only()
+    experiment_mass_from_equal_thrust()
+    experiment_acceleration_vs_thrust()
+    there_and_stop(target_x=100.0)
+    run_position_feedback_demo(target=100.0, steps=3600)
+    run_damped_feedback_demo(target=100.0, steps=10000)
+    drop_test(Nflights=40)
 
 
-#some graphs to help visualise the rocket coming into landing (first shows x-y, second shows t-x both useful)
-
-plt.figure(figsize=(20, 5))
-plt.plot(x_pos, y_pos, label='Flight Path', color='b')
-plt.axvline(x=initial_target_x, color='r', linestyle='--', label="Initial Target")
-plt.axvline(x=final_target_x, color='g', linestyle='--', label="Final Target")
-plt.axhline(y=0, color='k', linestyle='-')
-plt.title("Rocket Flight Path")
-plt.xlabel("Horizontal Position (m)")
-plt.ylabel("Vertical Position (m)")
-plt.legend()
-plt.grid(True)
-plt.show()
-
-plt.figure(figsize=(20, 5))
-plt.plot(times, x_pos, label="Rocket Position", color='r')
-plt.axhline(y=initial_target_x, color='y', linestyle='--', label="Initial Target")
-plt.axhline(y=final_target_x, color='g', linestyle='--', label="Final Target")
-plt.title("Rocket Position vs Time")
-plt.xlabel("Time (s)")
-plt.ylabel("Horizontal Position (m)")
-plt.legend()
-plt.grid(True)
-plt.show()
-
-# Check how many flights succeeded:
-print(my_rocket.successful_landing_counter)
+if __name__ == "__main__":
+    main()
