@@ -46,9 +46,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
 from scipy import optimize
+from module_engine.assignment import Assignment1
 
 # Parameters (either use module engine or use some example parameters, illustration only)
-#a, V0 = student.get_parameters() #Required to be running module engine
+#a, V0 = Assignment1.get_parameters() #Required to be running module engine
 a  = 1.0e-9   #1 nm
 V0 = 10.0     #10 eV
 
