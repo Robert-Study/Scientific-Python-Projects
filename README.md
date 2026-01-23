@@ -1,10 +1,10 @@
 # Intermediate Python Program Showcase
 
 ## Grades
-- **Intermediate Worksheets (1–6) average:** 98%  
-- **Intermediate Project 1 – Finite Square Well:** 95%  
-- **Intermediate Project 2 – Spectral Analysis:** 80%  
-- **Intermediate Project 3 – Landing the Rocket:** 90%
+- **Intermediate Worksheets:               (avg:** 98%)  
+- **Intermediate Project 1 – Finite Square Well** (95%)  
+- **Intermediate Project 2 – Spectral Analysis**  (80%)  
+- **Intermediate Project 3 – Landing the Rocket** (90%)
 
 ## What this repository is
 This repository is a **showcase of assessed scientific Python work**, curated for code review and portfolio presentation.  
