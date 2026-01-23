@@ -6,7 +6,7 @@ The course-provided **`module_engine`** package is **not included** (along with 
 These exclusions are intentional to preserve **academic integrity and prevent plagiarism**; users with access to the original course resources will be able to run the code.
 
 ## Grades
-- **Intermediate Worksheets:               (avg:** 98%)  
+- **Intermediate Worksheets:               (avg:** 98%, Cohort highest)  
 - **Intermediate Project 1 – Finite Square Well** (95%)  
 - **Intermediate Project 2 – Spectral Analysis**  (80%)  
-- **Intermediate Project 3 – Landing the Rocket** (90%)
+- **Intermediate Project 3 – Self Landing Rockets** (90%, Cohort highest)  
