@@ -8,7 +8,7 @@ These exclusions are intentional to preserve **academic integrity and prevent pl
 
 ## Grades
 - **Intermediate Worksheets:** 98% avg *(cohort highest)*  
-- **Intermediate Project 1 – Finite Square Well:** 95%  
+- **Intermediate Project 1 – Quantum Systems:** 95%  
 - **Intermediate Project 2 – Spectral Analysis:** 80%  
 - **Intermediate Project 3 – Self-Landing Rockets:** 90% *(cohort highest)*  
 
