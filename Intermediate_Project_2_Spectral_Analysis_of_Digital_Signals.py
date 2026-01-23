@@ -1,207 +1,289 @@
 """
 Intermediate Project 2: Spectral Analysis of Digital Signals (80%)
 
-Showcase-only source converted from a Jupyter notebook.
-Any student ID fields have been intentionally left blank.
+Aim
+---------------------------
+Use Fourier analysis (FFT) to investigate the frequency content of digital audio signals
+and identify the behaviour of unknown “box” filters (e.g., RC/RL/RLC). Apply a frequency-
+domain transfer function to reduce noise and improve signal-to-noise ratio (SNR).
 
-NOTE: This code references the course-provided `module_engine` package in places.
-The repository does not include `module_engine` (academic integrity / plagiarism prevention).
-"""
+Theory
+---------------------------
+1) A sampled time-domain signal x(t) can be transformed into the frequency domain X(f)
+   using the Fast Fourier Transform (FFT).
+2) Filters can be expressed via a transfer function T(f), so that: Y(f) = X(f) · T(f)
+   and the filtered time-domain signal is recovered via inverse FFT.
 
-from __future__ import annotations
+Workflow
+---------------------------
+A) Generate a swept-sine input and inspect it in time and frequency.
+B) Pass the swept-sine through a chosen box filter and compare spectra.
+C) Analyse a recorded signal spectrum, locate noise peaks, and apply a custom frequency-
+   domain filter (R, L, C, order N) repeatedly to suppress noise and improve SNR.
+   """
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+# =============================================================================
+# Pseudocode / course interface (intentionally not runnable in showcase)
+# =============================================================================
+
 from module_engine.assignment import Boxes
+studentID = ""  #showcase-only
+# t1_box1, t1_box2, t1_box3, t1_box4, t2_box, t3_rec, check_SNR, play = Boxes.get_boxes(studentID)
+# sampling_rate = Boxes.SAMP_RATE
 
 
-# Do not alter any of the code within this cell other than the value of studentID
-studentID = ""  # intentionally left blank for showcase
+# =============================================================================
+# Signal generation and plotting utilities
+# =============================================================================
 
-# Creating box objects to be investigated in this assignment.
-# Please do NOT change the line below. Your student ID must be inserted ABOVE.
-# The "Student ID is valid" or "Student ID not found" message
-# will be printed out six times (once by each box object), this is normal.
+def generate_swept_sine(
+    duration_s: float,
+    sampling_rate_hz: int,
+    f_min_hz: float = 10.0,
+    f_max_hz: float = 4000.0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Generate a swept-sine (chirp-like) test signal where frequency increases linearly
+    from f_min to f_max over the given duration.
 
-t1_box1, t1_box2, t1_box3, t1_box4, t2_box, t3_rec, check_SNR, play = Boxes.get_boxes(studentID)
-
-sampling_rate=Boxes.SAMP_RATE
-print("Audio sampling rate: ", sampling_rate, "Hz")
-
-duration = 1
-f1 = 10      #min 10
-f2 = 4000    #max 4000
-#sampling_rate = 44100Hz            (sampling_rate defined previously)
-N = duration * sampling_rate       #(N = number of points)
-
-
-times = np.linspace(0, duration, N, endpoint=False)            #times for each point
-frequencies = np.linspace(f1, f2, N)                     #frequencies at each point in time
-ssine_in = np.sin(2*np.pi*frequencies*times)             #ssine_in short for the swept sine wave input
-
-
- # time variables
-tot_time = times[-1]-times[0]
-timestep = tot_time/(N-1)
+    Returns:
+        times:       time axis [s]
+        frequencies: instantaneous frequency per sample [Hz]
+        signal:      swept-sine samples
+    """
+    n = int(duration_s * sampling_rate_hz)
+    times = np.linspace(0.0, duration_s, n, endpoint=False)
+    frequencies = np.linspace(f_min_hz, f_max_hz, n)
+    signal = np.sin(2.0 * np.pi * frequencies * times)
+    return times, frequencies, signal
 
 
- # time axis
-plt.figure(figsize=(15,3))
-plt.plot(times, ssine_in, 'b-')
-plt.title('Input signal')
-plt.xlabel('t [s]')
-plt.ylabel('V in [V]')
-plt.axis([0, duration, -1, 1])
-plt.show()
+def plot_time_series(times: np.ndarray, signal: np.ndarray, title: str) -> None:
+    plt.figure(figsize=(15, 3))
+    plt.plot(times, signal)
+    plt.title(title)
+    plt.xlabel("t [s]")
+    plt.ylabel("Amplitude")
+    plt.xlim(times[0], times[-1])
+    plt.ylim(-1.1, 1.1)
+    plt.grid(True)
+    plt.show()
 
 
- # frequency axis
-plt.figure(figsize=(15, 3))
-plt.plot(frequencies, ssine_in, 'b-')
-plt.title('Input Signal')
-plt.xlabel('f [Hz]')
-plt.ylabel('V in [V]')
-plt.axis([f1, f2, -1, 1])
-plt.show()
+def plot_signal_vs_frequency(frequencies: np.ndarray, signal: np.ndarray, title: str) -> None:
+    plt.figure(figsize=(15, 3))
+    plt.plot(frequencies, signal)
+    plt.title(title)
+    plt.xlabel("f [Hz]")
+    plt.ylabel("Amplitude")
+    plt.grid(True)
+    plt.show()
 
- # data
-print("Data points = {}".format(N))
-print("Total time  = {} s".format(tot_time))
-print("Time step   = {} s".format(timestep))
-print("time of first and last point = ", times[0],times[-1])
-print("Sampling frequency = {} Hz".format((1/timestep)))
 
-# INPUT SIGNAL
+# =============================================================================
+# Spectral analysis utilities
+# =============================================================================
 
-freq_in = np.fft.fftfreq(len(times), 1/sampling_rate)
-freq_in = freq_in[freq_in >= 0]
+def magnitude_spectrum(signal: np.ndarray, sampling_rate_hz: int) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Compute the one-sided magnitude spectrum of a real-valued time signal.
 
-signal_in = np.fft.fft(ssine_in)
-signal_in = np.abs(signal_in[:len(freq_in)])
+    Returns:
+        freqs_pos: non-negative frequencies [Hz]
+        mag_pos:   corresponding magnitudes
+    """
+    freqs = np.fft.fftfreq(len(signal), d=1.0 / sampling_rate_hz)
+    fft_vals = np.fft.fft(signal)
+    mag = np.abs(fft_vals)
 
-plt.figure(figsize=(10, 5))
-plt.plot(freq_in, signal_in)
-plt.title('Input Signal')
-plt.xlabel('Frequency [Hz]')
-plt.ylabel('Magnitude')
-plt.grid(True)
-plt.show()
+    mask = freqs >= 0
+    return freqs[mask], mag[mask]
 
-# FILTERED SIGNAL (essentially the same as before just with 'box.process(times, ssine_in)', instead of 'ssine_in')
 
-box = t1_box4   #CHANGE TO OTHER BOXES AS REQUIRED TO COMPARE
-
-freq_out = np.fft.fftfreq(len(times), 1/sampling_rate)
-freq_out = freq_out[freq_out >= 0]
-
-signal_out = np.fft.fft(box.process(times, ssine_in))
-signal_out = np.abs(signal_out[:len(freq_out)])
-
-plt.figure(figsize=(10, 5))
-plt.plot(freq_out, signal_out)
-plt.title('Output Signal (with box)')
-plt.xlabel('Frequency [Hz]')
-plt.ylabel('Magnitude')
-plt.grid(True)
-plt.show()
-
-RL_circuit = 1 #as similar to input above 5000Hz only
-RC_circuit = 2 #as magnitude decreases with frequency (it matches ~250 magnitude only at 0Hz)
-RLC_bandpass = 3 #as only reaches a magnitude ~250 at a specific frequency ~500Hz
-RLC_bandstop = 4 #as matches input but at only ~500Hz the magnitude drops to 0
-
-def my_box_process(t, s_in, R, L, C):
-    f0 = 1 / (2*np.pi * np.sqrt(L*C))
-    g = R / (2*np.pi*L)
-
-    #frequency
-    freq_in = np.fft.fftfreq(len(t), (t[1]-t[0]))
-    f = freq_in[freq_in >= 0]
-
-    s_in_freq = np.fft.fft(s_in)
-    s_in_pos = s_in_freq[:len(f)]
-
-    #transfer function
-    T = (f**2 - f0**2) / (f**2 - f0**2 - 1j * g * f)
-
-    #signal
-    s_out_pos = s_in_pos * T
-    s_out = np.fft.ifft(s_out_pos)
-    s_out_real = np.real(s_out)
-
-    return s_out_real
-
-play(t3_rec)
-
-student_figure = plt.figure(1, figsize=(15, 7))
-
-# Params
-duration = len(t3_rec) / sampling_rate
-f_min = 20
-f_max = 8000
-
-# FFT
-freqs = np.fft.fftfreq(len(t3_rec), 1/sampling_rate)
-freqs_pos = freqs[freqs >= 0]
-
-fft_vals = np.fft.fft(t3_rec)
-fft_mag = np.abs(fft_vals)
-fft_mag_pos = fft_mag[:len(freqs_pos)]
-
-# Plot
-plt.loglog(freqs_pos, fft_mag_pos)
-plt.title('Spectrum')
-plt.xlabel('f [Hz]')
-plt.ylabel('X(f) - magnitude')
-plt.grid(True)
-
-# Noise peak
-noise_idx = np.argmax(fft_mag_pos)
-noise_freq = freqs_pos[noise_idx]
-
-# Mark noise freq
-plt.axvline(noise_freq, linestyle='--')
-plt.show()
-print(f"Noise peak frequency is at {noise_freq}Hz")
-
-duration = len(t3_rec) / sampling_rate
-times = np.linspace(0, duration, len(t3_rec), endpoint=False)
-
-# filter multiple times
-def my_box_process_n_times(t, s_in, R, L, C, N):
-    s_out = my_box_process(t, s_in, R, L, C)
-    if N == 1:
-        return s_out
-    elif N > 1:
-        return my_box_process_n_times(t, s_out, R, L, C, N-1)
+def plot_spectrum(freqs: np.ndarray, mag: np.ndarray, title: str, loglog: bool = False) -> None:
+    plt.figure(figsize=(10, 5))
+    if loglog:
+        plt.loglog(freqs, mag)
     else:
-        print("Order of the filter N must be a positive integer")
+        plt.plot(freqs, mag)
 
-# parameters
-L = 0.0255
-R = 300
-C = 1.14e-6
-N = 3  # filter order
-
-
-filtered_signal = my_box_process_n_times(times, t3_rec, R, L, C, N)
+    plt.title(title)
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Magnitude")
+    plt.grid(True)
+    plt.show()
 
 
-play(filtered_signal)
+# =============================================================================
+# Box processing (course filters) — treated as pseudocode in showcase
+# =============================================================================
 
-# Calculate SNR
-print(check_SNR(R, L, C, N))
+def process_with_box(times: np.ndarray, signal_in: np.ndarray, box) -> np.ndarray:
+    """
+    Pseudocode wrapper for course-provided box processing.
+    In the course environment this would call: box.process(times, signal_in)
+    """
+    # return box.process(times, signal_in)
+    raise NotImplementedError("Showcase-only: box processing requires course module_engine.")
 
-# Provide your answer as a string
-student_PIN = "5737"
 
-# Uncomment the following lines if you do not have access to sound
-# and provide your R,L,C, and N parameters
-# Your signal to noise ratio (SNR) must exceed 1
+# =============================================================================
+# Custom frequency-domain filter (RLC-style transfer function)
+# =============================================================================
 
-# student_R =  # in Ohms
-# student_L =  # in Henrys
-# student_C =  # in Farads
-# student_filter_order = # the order of the filter
+def apply_transfer_filter_once(
+    times: np.ndarray,
+    signal_in: np.ndarray,
+    R: float,
+    L: float,
+    C: float,
+    sampling_rate_hz: int,
+) -> np.ndarray:
+    """
+    Apply a frequency-domain filter once using a transfer function.
 
-Boxes.check()
+    This uses:
+        f0 = 1 / (2π sqrt(LC))
+        g  = R / (2π L)
+
+    Transfer function form (as used in the original coursework):
+        T(f) = (f^2 - f0^2) / (f^2 - f0^2 - i g f)
+
+    Returns a real-valued time-domain filtered signal.
+    """
+    f0 = 1.0 / (2.0 * np.pi * np.sqrt(L * C))
+    g = R / (2.0 * np.pi * L)
+
+    dt = times[1] - times[0]
+    freqs = np.fft.fftfreq(len(times), d=dt)
+
+    s_in_freq = np.fft.fft(signal_in)
+
+    # Build transfer function across full FFT frequency axis.
+    # (Avoid divide-by-zero at f=0 implicitly handled by numpy complex arithmetic.)
+    T = (freqs**2 - f0**2) / (freqs**2 - f0**2 - 1j * g * freqs)
+
+    s_out_freq = s_in_freq * T
+    s_out = np.fft.ifft(s_out_freq)
+
+    return np.real(s_out)
+
+
+def apply_transfer_filter_n_times(
+    times: np.ndarray,
+    signal_in: np.ndarray,
+    R: float,
+    L: float,
+    C: float,
+    sampling_rate_hz: int,
+    order_n: int,
+) -> np.ndarray:
+    """
+    Apply the transfer filter repeatedly (order N).
+    """
+    if order_n < 1:
+        raise ValueError("Filter order N must be a positive integer.")
+
+    signal = signal_in
+    for _ in range(order_n):
+        signal = apply_transfer_filter_once(times, signal, R, L, C, sampling_rate_hz)
+    return signal
+
+
+# =============================================================================
+# Example analysis flow (showcase structure)
+# =============================================================================
+
+def example_workflow_showcase() -> None:
+    """
+    Showcase-only structure of the original notebook workflow.
+    Values and course calls are preserved conceptually, but course objects are not included.
+    """
+
+    # -------------------------------------------------------------------------
+    # A) Swept-sine input generation
+    # -------------------------------------------------------------------------
+    # sampling_rate = Boxes.SAMP_RATE
+    sampling_rate = ...  # placeholder in showcase
+    duration = 1.0
+
+    times, freqs_inst, ssine_in = generate_swept_sine(
+        duration_s=duration,
+        sampling_rate_hz=sampling_rate,
+        f_min_hz=10.0,
+        f_max_hz=4000.0,
+    )
+
+    plot_time_series(times, ssine_in, title="Input signal (swept sine) — time domain")
+    plot_signal_vs_frequency(freqs_inst, ssine_in, title="Input signal (swept sine) — instantaneous frequency axis")
+
+    # -------------------------------------------------------------------------
+    # B) Spectrum of input
+    # -------------------------------------------------------------------------
+    freq_in, mag_in = magnitude_spectrum(ssine_in, sampling_rate_hz=sampling_rate)
+    plot_spectrum(freq_in, mag_in, title="Input spectrum |X(f)|")
+
+    # -------------------------------------------------------------------------
+    # C) Spectrum after unknown box filter (pseudocode)
+    # -------------------------------------------------------------------------
+    # box = t1_box4
+    # signal_box = box.process(times, ssine_in)
+    # freq_out, mag_out = magnitude_spectrum(signal_box, sampling_rate_hz=sampling_rate)
+    # plot_spectrum(freq_out, mag_out, title="Output spectrum after box |Y(f)|")
+    #
+    # Box identification logic (kept as comments for showcase)
+    # RL_circuit       -> behaves like high-pass
+    # RC_circuit       -> behaves like low-pass
+    # RLC_bandpass     -> peak around resonance
+    # RLC_bandstop     -> notch around resonance
+
+    # -------------------------------------------------------------------------
+    # D) Recorded signal noise analysis + filtering (pseudocode data)
+    # -------------------------------------------------------------------------
+    # t3_rec is the recorded signal from the course environment.
+    t3_rec = ...  # placeholder in showcase
+
+    # Inspect spectrum (log-log is useful for wide dynamic range)
+    freqs_pos, mag_pos = magnitude_spectrum(t3_rec, sampling_rate_hz=sampling_rate)
+    plot_spectrum(freqs_pos, mag_pos, title="Recorded signal spectrum", loglog=True)
+
+    # Identify dominant noise peak
+    noise_idx = int(np.argmax(mag_pos))
+    noise_freq = freqs_pos[noise_idx]
+    print(f"Dominant noise peak at ~{noise_freq:.1f} Hz")
+
+    # Apply repeated filter with chosen R, L, C, N (from original notebook)
+    duration_rec = len(t3_rec) / sampling_rate
+    times_rec = np.linspace(0.0, duration_rec, len(t3_rec), endpoint=False)
+
+    R = 300.0
+    L = 0.0255
+    C = 1.14e-6
+    N = 3
+
+    filtered = apply_transfer_filter_n_times(
+        times=times_rec,
+        signal_in=t3_rec,
+        R=R,
+        L=L,
+        C=C,
+        sampling_rate_hz=sampling_rate,
+        order_n=N,
+    )
+
+    # Pseudocode: play(filtered) and compute SNR using course-provided function
+    # play(filtered)
+    # print(check_SNR(R, L, C, N))
+
+    student_PIN = "5737"  # coursework response (kept for completeness, showcase-only)
+    # Boxes.check()  # course-provided validation
+
+
+# No execution guard intentionally required for showcase-only display.
+# If you *do* want it runnable locally, add:
+# if __name__ == "__main__":
+#     example_workflow_showcase()
