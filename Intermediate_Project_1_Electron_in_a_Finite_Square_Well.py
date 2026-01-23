@@ -47,10 +47,14 @@ import matplotlib.pyplot as plt
 from scipy import constants
 from scipy import optimize
 
-a, V0 = student.get_parameters() #Required to be running module engine
+# Parameters (either use module engine or use some example parameters, illustration only)
+#a, V0 = student.get_parameters() #Required to be running module engine
+a  = 1.0e-9   #1 nm
+V0 = 10.0     #10 eV
+
+
 
 # Potential well plot (V(x))
-
 def plot_potential(a: float, V0: float) -> None:
     x_coord = np.linspace(-a, a, 1000)
     V = np.piecewise(
@@ -130,7 +134,7 @@ def x_to_energy_eV(x: float, a: float) -> float:
     E_J = 2.0 * (hbar * x / a)**2 / m_e
     return E_J / e
 
-# Main execution (showcase flow)
+# execution
 def main() -> None:
     plot_potential(a, V0)
     plot_transcendental(lambda_0)
@@ -141,6 +145,9 @@ def main() -> None:
     energies = [x_to_energy_eV(r, a) for r in roots]
     for i, E_eV in enumerate(energies, start=1):
         print(f"Eigenvalue {i}: E = {E_eV:.3f} eV")
-    student.check()
 
-main()
+    # student.check()  # requires module_engine
+
+if __name__ == "__main__":
+    main()
+
