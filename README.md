@@ -10,5 +10,5 @@ It is intended for **reading and evaluation**, not direct execution.
 - **Intermediate Project 2 – Spectral Analysis**  (80%)  
 - **Intermediate Project 3 – Landing the Rocket** (90%)
 
-The course-provided **`module_engine`** package is **not included**, and associated data files are also omitted.  
+The course-provided **`module_engine`** package is **not included** (along with any associated data files).
 These exclusions are intentional to preserve **academic integrity and prevent plagiarism**; users with access to the original course resources will be able to run the code.
