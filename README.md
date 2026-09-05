@@ -1,4 +1,4 @@
-# Intermediate Python Program Showcase
+# Scientific-Python-Projects
 
 This repository is a **showcase of assessed scientific Python work**, curated for code review and portfolio presentation.  
 It is intended for **reading and evaluation**, not direct execution.
