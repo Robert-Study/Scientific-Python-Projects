@@ -1,4 +1,4 @@
-"""Intermediate Worksheets 1–6 (Merged Showcase)
+"""Scientific Worksheets 1–6 (Merged Showcase)
 
 This single file consolidates Worksheets 6 → 1 (most advanced first)
 Data files are NOT included provided
