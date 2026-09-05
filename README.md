@@ -4,7 +4,12 @@ A collection of assessed computational-physics projects developed in Python, cov
 
 The projects demonstrate numerical methods, scientific programming, signal processing and simulation across a range of physics problems.
 
-> **Selected results:** Quantum Systems — **95%** · Self-Landing Rockets — **90%** *(cohort highest)* · Spectral Analysis — **80%** · Programming Worksheets — **98% average** *(cohort highest)*
+## Selected Results
+
+- **Quantum Systems — 95%**
+- **Self-Landing Rockets — 90%** *(cohort highest)*
+- **Spectral Analysis — 80%**
+- **Programming Worksheets — 98% average** *(cohort highest)*
 
 ## Projects
 
