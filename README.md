@@ -1,15 +1,30 @@
-# Scientific-Python-Projects
+# Scientific Python Projects
 
-This repository is a **showcase of assessed scientific Python work**, curated for code review and portfolio presentation.  
-It is intended for **reading and evaluation**, not direct execution.
+A collection of assessed computational-physics projects developed in Python, covering quantum systems, Fourier analysis and autonomous rocket landing simulations.
 
-The course-provided **`module_engine`** package (and associated data files) is **not included**.  
-These exclusions are intentional to preserve **academic integrity and prevent plagiarism**; users with access to the original course resources will be able to run the code.
+The projects demonstrate numerical methods, scientific programming, signal processing and simulation across a range of physics problems.
 
-## Grades
-- **Intermediate Worksheets:** 98% avg *(cohort highest)*  
-- **Intermediate Project 1 – Quantum Systems:** 95%  
-- **Intermediate Project 2 – Spectral Analysis:** 80%  
-- **Intermediate Project 3 – Self-Landing Rockets:** 90% *(cohort highest)*  
+> **Selected results:** Quantum Systems — **95%** · Self-Landing Rockets — **90%** *(cohort highest)* · Spectral Analysis — **80%** · Programming Worksheets — **98% average** *(cohort highest)*
 
-*For reference: 70% corresponds to a First-Class Honours standard.*
+## Projects
+
+### Quantum Systems
+Numerical solution of quantum-mechanical systems using root-finding and computational modelling.
+
+### Spectral Analysis
+Fourier-based signal analysis and frequency-domain processing of experimental or simulated data.
+
+### Self-Landing Rockets
+Simulation and control of an autonomous rocket landing system, combining numerical modelling and trajectory analysis.
+
+## Technical Methods
+
+- Python
+- NumPy
+- SciPy
+- Numerical methods
+- Root finding
+- Fourier analysis
+- Simulation
+- Data visualisation
+- Scientific computing
