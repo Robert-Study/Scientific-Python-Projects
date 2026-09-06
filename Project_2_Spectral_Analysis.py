@@ -25,11 +25,6 @@ C) Analyse a recorded signal spectrum, locate noise peaks, and apply a custom fr
 
 import numpy as np
 import matplotlib.pyplot as plt
-from module_engine.assignment import Boxes, Assignment2
-
-
-t1_box1, t1_box2, t1_box3, t1_box4, t2_box, t3_rec, check_SNR, play = Boxes.get_boxes(Assignment2())
-sampling_rate = Boxes.SAMP_RATE
 
 
 # Signal generation
@@ -44,10 +39,18 @@ def generate_swept_sine(
     Generate a swept-sine test signal where frequency increases linearly
     from f_min to f_max over the given duration.
     """
+    if not all(np.isfinite(v) for v in [duration_s, sampling_rate_hz, f_min_hz, f_max_hz]):
+        raise ValueError('Signal parameters must be finite.')
+    if duration_s <= 0 or sampling_rate_hz <= 0 or not 0 <= f_min_hz < f_max_hz < sampling_rate_hz / 2:
+        raise ValueError('Use a positive duration/rate and 0 <= f_min < f_max < Nyquist.')
     n = int(duration_s * sampling_rate_hz)
+    if n < 2:
+        raise ValueError('At least two samples are required.')
     times = np.linspace(0.0, duration_s, n, endpoint=False)
-    frequencies = np.linspace(f_min_hz, f_max_hz, n)
-    signal = np.sin(2.0 * np.pi * frequencies * times)
+    sweep_rate = (f_max_hz - f_min_hz) / duration_s
+    frequencies = f_min_hz + sweep_rate * times
+    phase = 2.0 * np.pi * (f_min_hz * times + 0.5 * sweep_rate * times**2)
+    signal = np.sin(phase)
     return times, frequencies, signal
 
 # Plotting utilities
@@ -79,12 +82,10 @@ def magnitude_spectrum(signal: np.ndarray, sampling_rate_hz: int) -> tuple[np.nd
     Compute the one-sided magnitude spectrum of a real-valued time signal.
     Returns (freqs>=0, |FFT|).
     """
-    freqs = np.fft.fftfreq(len(signal), d=1.0 / sampling_rate_hz)
-    fft_vals = np.fft.fft(signal)
-    mag = np.abs(fft_vals)
-
-    mask = freqs >= 0
-    return freqs[mask], mag[mask]
+    signal = np.asarray(signal, float)
+    if signal.ndim != 1 or len(signal) < 2 or sampling_rate_hz <= 0:
+        raise ValueError('Provide a real 1D signal and positive sampling rate.')
+    return np.fft.rfftfreq(len(signal), d=1.0 / sampling_rate_hz), np.abs(np.fft.rfft(signal))
 
 
 def plot_spectrum(freqs: np.ndarray, mag: np.ndarray, title: str, loglog: bool = False) -> None:
@@ -126,6 +127,16 @@ def apply_transfer_filter_once(
 
     Returns a real-valued time-domain filtered signal.
     """
+    times, signal_in = np.asarray(times, float), np.asarray(signal_in, float)
+    if times.ndim != 1 or times.shape != signal_in.shape or len(times) < 2:
+        raise ValueError('Time and signal arrays must be matching 1D arrays with at least two samples.')
+    if not np.all(np.isfinite(times)) or not np.all(np.isfinite(signal_in)):
+        raise ValueError('Time and signal arrays must be finite.')
+    dt_all = np.diff(times)
+    if dt_all[0] <= 0 or not np.allclose(dt_all, dt_all[0], rtol=1e-7, atol=1e-12):
+        raise ValueError('FFT filtering requires uniformly spaced, increasing times.')
+    if any(not np.isfinite(v) or v <= 0 for v in [R, L, C]):
+        raise ValueError('R, L and C must be finite and positive.')
     f0 = 1.0 / (2.0 * np.pi * np.sqrt(L * C))
     g = R / (2.0 * np.pi * L)
 
@@ -148,7 +159,7 @@ def apply_transfer_filter_n_times(
     order_n: int,
 ) -> np.ndarray:
     """Apply the transfer filter repeatedly (order N)."""
-    if order_n < 1:
+    if not isinstance(order_n, (int, np.integer)) or order_n < 1:
         raise ValueError("Filter order N must be a positive integer.")
 
     signal = signal_in
@@ -159,6 +170,12 @@ def apply_transfer_filter_n_times(
 
 # Execution
 def main() -> None:
+    try:
+        from module_engine.assignment import Boxes, Assignment2
+    except ImportError:
+        raise SystemExit('The original recorded-signal exercise requires the university module_engine. Run python demo.py for a standalone synthetic example.')
+    t1_box1, t1_box2, t1_box3, t1_box4, t2_box, t3_rec, check_SNR, play = Boxes.get_boxes(Assignment2())
+    sampling_rate = Boxes.SAMP_RATE
     print("Audio sampling rate:", sampling_rate, "Hz")
 
     # A) Swept-sine input generation

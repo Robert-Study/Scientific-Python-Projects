@@ -46,7 +46,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
 from scipy import optimize
-from module_engine.assignment import Assignment1
 
 # Parameters (either use module engine or use some example parameters, illustration only)
 #a, V0 = Assignment1().get_parameters() #Required to be running module engine
@@ -79,9 +78,9 @@ m_e = constants.m_e      # electron mass [kg]
 # Convert V0 from eV to Joules inside λ0:
 lambda_0 = (m_e * a**2 * (V0 * e)) / (2 * hbar**2)
 
-def f_rhs(x: np.ndarray | float) -> np.ndarray | float:
+def f_rhs(x: np.ndarray | float, depth=lambda_0) -> np.ndarray | float:
     """f(x) = sqrt(λ0 - x^2)/x (domain: 0 < x < sqrt(λ0))."""
-    return np.sqrt(lambda_0 - x**2) / x
+    return np.sqrt(np.maximum(depth - np.asarray(x)**2, 0)) / x
 
 
 # Visualise transcendental functions (to bracket roots)
@@ -90,7 +89,7 @@ def plot_transcendental(lambda_0: float) -> None:
 
     tan_x = np.tan(x)
     neg_cot_x = -1.0 / np.tan(x)
-    f_x = f_rhs(x)
+    f_x = f_rhs(x, lambda_0)
 
     plt.figure(figsize=(10, 6))
     plt.plot(x, tan_x, label="tan(x)")
@@ -115,17 +114,28 @@ def odd_equation(x: float) -> float:
 
 
 # Solve for roots (replace brackets with those identified from your plot)
-def solve_eigenvalues() -> list[float]:
-    # Returns a sorted list of dimensionless roots x.
-    # Brackets should be chosen by inspection of plot_transcendental().
-    roots: list[float] = []
+def solve_eigenvalues(depth=lambda_0) -> list[float]:
+    """Find all bound states using pole-free half-period brackets.
 
-    # Example brackets
-    roots.append(optimize.bisect(even_equation, 1.0, 1.5))
-    roots.append(optimize.bisect(odd_equation, 2.0, 3.0))
-    roots.append(optimize.bisect(even_equation, 3.5, 4.5))
-
-    roots.sort()
+    Equivalent equations x*sin(x)-q*cos(x)=0 (even) and
+    x*cos(x)+q*sin(x)=0 (odd) avoid mistaking tangent poles for roots.
+    """
+    if not np.isfinite(depth) or depth <= 0:
+        raise ValueError('The dimensionless well depth must be finite and positive.')
+    limit = float(np.sqrt(depth))
+    roots = []
+    for interval in range(int(np.ceil(2 * limit / np.pi))):
+        lo = interval * np.pi / 2
+        hi = min((interval + 1) * np.pi / 2, limit)
+        if hi <= lo:
+            continue
+        def equation(x):
+            q = np.sqrt(max(depth - x*x, 0.0))
+            if interval % 2 == 0:
+                return x*np.sin(x) - q*np.cos(x)
+            return x*np.cos(x) + q*np.sin(x)
+        if equation(lo) * equation(hi) < 0:
+            roots.append(optimize.brentq(equation, lo, hi, xtol=1e-14))
     return roots
 
 

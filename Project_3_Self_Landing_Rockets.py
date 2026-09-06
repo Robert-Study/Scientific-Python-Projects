@@ -29,9 +29,7 @@ D) Control tasks:
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from module_engine.assignment import Rocket
-
-my_rocket = Rocket()
+my_rocket = None  # The course simulator is loaded only for the original demo.
 
 # Global plotting settings
 plt.rcParams["font.size"] = 20
@@ -515,6 +513,12 @@ def drop_test(Nflights: int = 40) -> None:
 
 # Main (module_engine required)
 def main() -> None:
+    global my_rocket
+    try:
+        from module_engine.assignment import Rocket
+    except ImportError:
+        raise SystemExit('This exercise requires the university module_engine rocket simulator. The numerical helpers can be imported independently; python demo.py runs the standalone portfolio examples.')
+    my_rocket = Rocket()
     warmup_demo()
     experiment_offset_right_only()
     experiment_mass_from_equal_thrust()

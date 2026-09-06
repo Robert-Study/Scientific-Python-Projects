@@ -1,0 +1,18 @@
+{
+  "example_parameters": {
+    "well_width_nm": 1,
+    "barrier_eV": 10.0
+  },
+  "bound_state_energies_eV": [
+    0.29760167615427785,
+    1.1862653920122375,
+    2.6518670430741915,
+    4.663049064518123,
+    7.144565557327741,
+    9.769306801410593
+  ],
+  "signal_data": "synthetic deterministic tones",
+  "snr_before_db": 4.436974992327127,
+  "snr_after_db": 25.689758515545556,
+  "note": "Post-assessment portfolio example, not the university recorded audio or rocket simulator."
+}
