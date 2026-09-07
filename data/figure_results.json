@@ -1,0 +1,44 @@
+{
+  "quantum_energies_eV": [
+    0.29760167615427785,
+    1.1862653920122375,
+    2.6518670430741915,
+    4.663049064518123,
+    7.144565557327741,
+    9.769306801410593
+  ],
+  "spectral": {
+    "centre_hz": 505.5,
+    "R_ohm": 8.0,
+    "L_H": 0.0255,
+    "C_F": 3.887386865821085e-06,
+    "passes": 3,
+    "reference_snr_before_db": -76.31105020304413,
+    "reference_snr_after_db": 4.639995615777474,
+    "snr_definition": "10 log10(sum(clean**2)/sum((output-clean)**2)), including distortion"
+  },
+  "worksheets": {
+    "dice_trials": 200000,
+    "dice_seed": 42,
+    "dice_max_probability_error": 0.001893209876543206,
+    "madelung_cutoffs": [
+      5,
+      10,
+      20,
+      40,
+      80
+    ],
+    "madelung_sums": [
+      1.8525354904122846,
+      1.692578928259459,
+      1.7194011694541163,
+      1.7333090325169251,
+      1.7403925416026458
+    ],
+    "most_bound_Z_A_MeV_per_nucleon": [
+      28,
+      62,
+      8.70245768367189
+    ]
+  }
+}

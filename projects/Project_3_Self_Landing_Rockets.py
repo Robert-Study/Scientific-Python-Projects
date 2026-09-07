@@ -512,13 +512,13 @@ def drop_test(Nflights: int = 40) -> None:
     print("Successful landings:", my_rocket.successful_landing_counter)
 
 # Main (module_engine required)
-def main() -> None:
+def main(student_id: int = 0) -> None:
     global my_rocket
     try:
         from module_engine.assignment import Rocket
     except ImportError:
-        raise SystemExit('This exercise requires the university module_engine rocket simulator. The numerical helpers can be imported independently; python demo.py runs the standalone portfolio examples.')
-    my_rocket = Rocket()
+        raise SystemExit('The rocket exercise uses the university-supplied module_engine package.')
+    my_rocket = Rocket(student_id)
     warmup_demo()
     experiment_offset_right_only()
     experiment_mass_from_equal_thrust()
@@ -530,4 +530,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="University rocket-control exercise")
+    parser.add_argument("--student-id", type=int, default=0, help="Course parameter ID; 0 uses demonstration settings")
+    main(parser.parse_args().student_id)

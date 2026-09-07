@@ -169,12 +169,12 @@ def apply_transfer_filter_n_times(
 
 
 # Execution
-def main() -> None:
+def main(student_id: int = 0) -> None:
     try:
-        from module_engine.assignment import Boxes, Assignment2
+        from module_engine.assignment import Boxes
     except ImportError:
-        raise SystemExit('The original recorded-signal exercise requires the university module_engine. Run python demo.py for a standalone synthetic example.')
-    t1_box1, t1_box2, t1_box3, t1_box4, t2_box, t3_rec, check_SNR, play = Boxes.get_boxes(Assignment2())
+        raise SystemExit('The filter-box exercise uses the university-supplied module_engine package.')
+    t1_box1, t1_box2, t1_box3, t1_box4, t2_box, t3_rec, check_SNR, play = Boxes.get_boxes(student_id)
     sampling_rate = Boxes.SAMP_RATE
     print("Audio sampling rate:", sampling_rate, "Hz")
 
@@ -185,8 +185,8 @@ def main() -> None:
 
     times, freqs_inst, ssine_in = generate_swept_sine(duration, sampling_rate, f_min, f_max)
 
-    plot_time_series(times, ssine_in, "Input signal (swept sine) — time domain")
-    plot_signal_vs_frequency(freqs_inst, ssine_in, "Input signal (swept sine) — instantaneous frequency axis")
+    plot_time_series(times, ssine_in, "Input signal (swept sine) : time domain")
+    plot_signal_vs_frequency(freqs_inst, ssine_in, "Input signal (swept sine) : instantaneous frequency axis")
 
     # B) Spectrum of input
     freq_in, mag_in = magnitude_spectrum(ssine_in, sampling_rate)
@@ -223,8 +223,10 @@ def main() -> None:
     play(filtered_signal)
     print("SNR:", check_SNR(R, L, C, N))
 
-    Boxes.check()
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="University filter-box exercise")
+    parser.add_argument("--student-id", type=int, default=0, help="Course parameter ID; 0 uses demonstration settings")
+    main(parser.parse_args().student_id)

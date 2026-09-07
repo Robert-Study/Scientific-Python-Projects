@@ -2,38 +2,67 @@
 
 Assessed computational-physics work from my degree at the University of Birmingham, covering **quantum mechanics, Fourier analysis, signal processing and feedback control**.
 
-## Quantum systems — 95%
+## Quantum systems
 
-[Source code](Project_1_Quantum_Systems.py)
+**95%** · [Source code](projects/Project_1_Quantum_Systems.py)
 
-I modelled the bound states of an electron in a finite square well, reformulating the Schrödinger equation into dimensionless even- and odd-parity equations. Numerical root finding gives the allowed energy eigenvalues and their dependence on the well parameters.
+I modelled the bound states of an electron in a finite square well, reformulating the Schrödinger equation into dimensionless even- and odd-parity equations. Bracketed numerical root finding gives the allowed energy eigenvalues.
 
-The energy diagram below shows the six bound states for a 1 nm well with a 10 eV barrier.
+![Calculated finite-well energy levels](quantum-energy-levels.png)
 
-## Spectral analysis — 80%
+*Six bound states calculated for a 1 nm well with a 10 eV barrier.*
 
-[Source code](Project_2_Spectral_Analysis.py)
+The calculation locates roots between successive half-periods without crossing tangent poles, then converts the dimensionless solutions into energies. The potential and energy levels make the connection between the numerical roots and the physical states visible.
 
-I used swept-sine signals and Fourier analysis to identify the behaviour of unknown electronic filters, locate unwanted spectral components and reconstruct filtered signals through a custom transfer function.
+## Spectral analysis
 
-![Finite-well energy levels and a signal-processing illustration with broadband noise and multiple interfering frequencies](assets/scientific-python.png)
+**80%** · [Source code](projects/Project_2_Spectral_Analysis.py)
 
-*Computational illustrations: finite-well energy levels, and a three-component signal with broadband noise and three interfering tones. The filtering panel combines notch and low-pass filtering; the noise trace is generated for this figure.*
+I used swept-sine signals and Fourier analysis to identify unknown electronic filters, locate unwanted spectral components and reconstruct filtered signals through a custom transfer function.
 
-## Self-landing rockets — 90%, cohort highest
+![University spoken-digit recordings before and after frequency-domain filtering](spectral-analysis.png)
 
-[Source code](Project_3_Self_Landing_Rockets.py)
+*Re-analysis of the spoken-digit recordings supplied with the university assignment, using the course noise model and the RLC band-stop filtering method.*
+
+The course files supply real speech recordings and a generator for the interfering signal. The analysis locates the dominant interference near **505.5 Hz** from the corrupted input and applies three passes of the RLC band-stop transfer function. The figure shows the waveform and spectrum, with the clean recording available as a reference.
+
+The noise model is a deliberately severe coursework test. The reported reference SNR includes both remaining noise and distortion of the clean signal. It describes this re-analysis, rather than an archived score from the assessed submission.
+
+The source recordings were sampled at 44.1 kHz. The included analysis data use 11.025 kHz after anti-alias filtering and downsampling. Input arrays, source information and numerical outputs are in `data/`.
+
+## Self-landing rockets
+
+**90%, highest in the cohort** · [Source code](projects/Project_3_Self_Landing_Rockets.py)
 
 I investigated a two-dimensional rocket simulator, using numerical experiments to identify its dynamics before constructing positioning and landing controllers. The work covered thruster offsets, mass and thrust estimates, acceleration-to-thrust mapping, proportional feedback and damped PD-style control using position and velocity.
 
-## Programming worksheets — 98% average, cohort highest
+The analysis separates the initial identification experiments from the control strategies and repeated drop tests. The original course interface accepts a parameter ID when creating the simulator.
 
-[Source code](Scientific_Worksheets.py)
+## Programming worksheets
 
-Six worksheets covering scientific Python and numerical methods: complex arithmetic, sequences and series, conditional probability, nuclear binding energies, bisection, lattice sums, stellar data, electrostatic fields and Monte Carlo simulation.
+**98% average, highest in the cohort** · [Source code](projects/Scientific_Worksheets.py)
 
-The consolidated source separates calculations from plots and uses named functions for reusable methods. Dice sampling and random walks use vectorised array operations; physical quantities and input units are documented alongside the calculations.
+Six worksheets cover complex arithmetic, sequences and series, conditional probability, nuclear binding energies, bisection, lattice sums, stellar data, electrostatic fields and Monte Carlo simulation.
 
-**Methods:** Python, NumPy, SciPy, Matplotlib, numerical root finding, Fourier analysis, transfer functions, feedback control and scientific visualisation.
+![Worksheet calculations for dice probabilities, nuclear binding energies, lattice sums and electric fields](scientific-worksheets.png)
 
-The marks refer to the assessed coursework. This repository collects the work as a portfolio, with later improvements to clarity and numerical implementation.
+*Figures calculated from the worksheet methods: exact and Monte Carlo dice probabilities, binding-energy searches, finite lattice sums and point-charge field directions.*
+
+The dice calculation compares **200,000 trials** with all **1,296 possible four-die outcomes**. The nuclear calculation searches integer mass numbers for each atomic number. The Madelung calculation sums the lattice in finite cubes, while the electrostatic calculation uses the vector form of Coulomb's law.
+
+The consolidated source separates calculations from plots and gives reusable methods named functions. Dice sampling and random walks use vectorised arrays. Input validation, units and singular points are handled in the relevant numerical routines.
+
+The supplied archives contain the Y2 assignment templates and backend materials. The original dice-observation and stellar-catalogue files for the worksheets were not among them, so those file-based routines remain available without invented observations.
+
+## Files and methods
+
+| Folder | Contents |
+| --- | --- |
+| `projects/` | The four coursework source files and the figure-production script |
+| `data/` | Course audio arrays, source information and calculated figure results |
+
+The quantum, spectral and worksheet images are separate top-level PNGs. `projects/make_figures.py` records how each is produced. The raw course backend is university-supplied; the dependency is noted in `requirements.txt`.
+
+**Tools:** Python, NumPy, SciPy and Matplotlib.
+
+The marks refer to the assessed coursework. The figures show the calculations and re-analysis described above, with later improvements to code clarity and numerical implementation.

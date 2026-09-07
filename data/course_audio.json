@@ -1,0 +1,12 @@
+{
+  "source": "University of Birmingham Y2 Computing assignment2.zip, module_engine/raw_numbers.out and the supplied Generator noise model",
+  "parameter_mode": "Course demonstration settings",
+  "source_sampling_rate_hz": 44100,
+  "analysis_sampling_rate_hz": 11025,
+  "resampling": "scipy.signal.resample_poly, downsampling by four with anti-alias filtering",
+  "hum_frequency_hz": 505.46875,
+  "digits": "5683",
+  "raw_recordings_sha256": "7e1f06ae55df6ccc840677d2dbbe4f09d5aa84f1c75e24ad58d40615c98d7cbe",
+  "duration_s": 10.0,
+  "course_noise_snr_before_windowing": 1e-08
+}
