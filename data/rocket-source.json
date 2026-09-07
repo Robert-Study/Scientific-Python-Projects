@@ -1,0 +1,23 @@
+{
+  "source": "University assignment3/module_engine/assignment.py, Rocket simulator supplied in assignment3.zip",
+  "parameter_set": 0,
+  "target_m": 100,
+  "duration_s": 60,
+  "mode": "space",
+  "controller_source": "projects/Project_3_Self_Landing_Rockets.py: control_trace",
+  "description": "Fresh horizontal positioning runs using the original P and damped feedback controllers. Velocity is estimated from returned positions. These traces do not represent vertical touchdown tests.",
+  "results": {
+    "proportional": {
+      "last_time_s": 60.0,
+      "final_position_m": 104.6035505091,
+      "final_velocity_m_s": 13.827303941999958,
+      "maximum_position_m": 209.3966565754
+    },
+    "damped": {
+      "last_time_s": 60.0,
+      "final_position_m": 100.0093734499,
+      "final_velocity_m_s": 0.0004325820000872227,
+      "maximum_position_m": 117.1195695434
+    }
+  }
+}

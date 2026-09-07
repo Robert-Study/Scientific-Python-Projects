@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 my_rocket = None  # The course simulator is loaded only for the original demo.
 
 # Global plotting settings
-plt.rcParams["font.size"] = 20
+plt.rcParams["font.size"] = 10
 plt.rcParams["axes.formatter.useoffset"] = False
 
 # Utility helpers
@@ -511,14 +511,41 @@ def drop_test(Nflights: int = 40) -> None:
 
     print("Successful landings:", my_rocket.successful_landing_counter)
 
+def control_trace(rocket, *, target=100.0, duration_s=60.0, damped=True):
+    """Record feedback from simulator measurements, rather than predicted motion.
+
+    Columns are time (s), horizontal position (m), estimated velocity (m/s),
+    and left/right thrust commands (N). The first row is the initial state.
+    """
+    if not np.isfinite([target, duration_s]).all() or duration_s <= 0:
+        raise ValueError("Use a finite target and positive duration.")
+    rocket.reset("space")
+    dt = float(rocket.TIMESTEP)
+    pos = float(rocket.get_init_pos()[0])
+    velocity = 0.0
+    rows = [[0.0, pos, velocity, 0.0, 0.0]]
+    for i in range(round(duration_s / dt)):
+        left, right = (damped_feedback(pos, velocity, target) if damped
+                       else position_feedback(pos, target))
+        if not np.isfinite([left, right]).all():
+            raise ValueError("Requested thrust lies outside the identified range.")
+        new_pos = float(rocket.advance(left, right)[0])
+        velocity = (new_pos - pos) / dt
+        pos = new_pos
+        rows.append([(i + 1) * dt, pos, velocity, left, right])
+        if not rocket.is_in_bounds():
+            break
+    return np.asarray(rows)
+
+
 # Main (module_engine required)
-def main(student_id: int = 0) -> None:
+def main(parameter_set: int = 0) -> None:
     global my_rocket
     try:
         from module_engine.assignment import Rocket
     except ImportError:
         raise SystemExit('The rocket exercise uses the university-supplied module_engine package.')
-    my_rocket = Rocket(student_id)
+    my_rocket = Rocket(parameter_set)
     warmup_demo()
     experiment_offset_right_only()
     experiment_mass_from_equal_thrust()
@@ -532,5 +559,5 @@ def main(student_id: int = 0) -> None:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="University rocket-control exercise")
-    parser.add_argument("--student-id", type=int, default=0, help="Course parameter ID; 0 uses demonstration settings")
-    main(parser.parse_args().student_id)
+    parser.add_argument("--parameter-set", type=int, default=0, help="Course parameter set; 0 uses default settings")
+    main(parser.parse_args().parameter_set)

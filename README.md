@@ -8,7 +8,7 @@ Assessed computational-physics work from my degree at the University of Birmingh
 
 I modelled the bound states of an electron in a finite square well, reformulating the Schrödinger equation into dimensionless even- and odd-parity equations. Bracketed numerical root finding gives the allowed energy eigenvalues.
 
-![Calculated finite-well energy levels](quantum-energy-levels.png)
+<img src="quantum-energy-levels.png" width="560" alt="Calculated finite-well energy levels">
 
 *Six bound states calculated for a 1 nm well with a 10 eV barrier.*
 
@@ -20,7 +20,7 @@ The calculation locates roots between successive half-periods without crossing t
 
 I used swept-sine signals and Fourier analysis to identify unknown electronic filters, locate unwanted spectral components and reconstruct filtered signals through a custom transfer function.
 
-![University spoken-digit recordings before and after frequency-domain filtering](spectral-analysis.png)
+<img src="spectral-analysis.png" width="660" alt="University spoken-digit recordings before and after filtering">
 
 *Re-analysis of the spoken-digit recordings supplied with the university assignment, using the course noise model and the RLC band-stop filtering method.*
 
@@ -36,7 +36,11 @@ The source recordings were sampled at 44.1 kHz. The included analysis data use 1
 
 I investigated a two-dimensional rocket simulator, using numerical experiments to identify its dynamics before constructing positioning and landing controllers. The work covered thruster offsets, mass and thrust estimates, acceleration-to-thrust mapping, proportional feedback and damped PD-style control using position and velocity.
 
-The analysis separates the initial identification experiments from the control strategies and repeated drop tests. The original course interface accepts a parameter ID when creating the simulator.
+The analysis separates the initial identification experiments from the control strategies and repeated drop tests. The controller combines position error with velocity feedback to reduce overshoot.
+
+<img src="rocket-control.png" width="660" alt="Horizontal rocket control: position feedback compared with damped feedback">
+
+*Horizontal positioning in the supplied rocket simulator: adding velocity feedback damps the oscillations around a 100 m target. A fresh run of the coursework controllers.*
 
 ## Programming worksheets
 
@@ -44,7 +48,7 @@ The analysis separates the initial identification experiments from the control s
 
 Six worksheets cover complex arithmetic, sequences and series, conditional probability, nuclear binding energies, bisection, lattice sums, stellar data, electrostatic fields and Monte Carlo simulation.
 
-![Worksheet calculations for dice probabilities, nuclear binding energies, lattice sums and electric fields](scientific-worksheets.png)
+<img src="scientific-worksheets.png" width="660" alt="Dice probabilities, binding energies, lattice sums and electric fields">
 
 *Figures calculated from the worksheet methods: exact and Monte Carlo dice probabilities, binding-energy searches, finite lattice sums and point-charge field directions.*
 
@@ -61,7 +65,7 @@ The supplied archives contain the Y2 assignment templates and backend materials.
 | `projects/` | The four coursework source files and the figure-production script |
 | `data/` | Course audio arrays, source information and calculated figure results |
 
-The quantum, spectral and worksheet images are separate top-level PNGs. `projects/make_figures.py` records how each is produced. The raw course backend is university-supplied; the dependency is noted in `requirements.txt`.
+All project figures are separate top-level PNGs. `projects/make_figures.py` records how each is produced. The raw course backend is university-supplied; the dependency is noted in `requirements.txt`.
 
 **Tools:** Python, NumPy, SciPy and Matplotlib.
 
