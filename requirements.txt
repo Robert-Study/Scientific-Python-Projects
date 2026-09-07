@@ -1,3 +1,6 @@
 numpy>=1.26,<3
 scipy>=1.12,<2
 matplotlib>=3.8,<4
+
+# module_engine: supplied with the original university course materials.
+# Used by the audio/filter-box and rocket-control projects.

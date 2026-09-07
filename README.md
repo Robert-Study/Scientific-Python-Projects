@@ -1,61 +1,39 @@
 # Scientific Python Projects
 
-Computational physics coursework from my degree at the University of Birmingham: quantum bound states, Fourier analysis, signal filtering and rocket control.
+Assessed computational-physics work from my degree at the University of Birmingham, covering **quantum mechanics, Fourier analysis, signal processing and feedback control**.
 
-| Project | Mark | Main work |
-| --- | ---: | --- |
-| [Quantum systems](Project_1_Quantum_Systems.py) | **95%** | Finite square well, dimensionless equations and numerical root finding |
-| [Self-landing rockets](Project_3_Self_Landing_Rockets.py) | **90%** | Identifying simulator dynamics, positioning and P/PD feedback |
-| [Spectral analysis](Project_2_Spectral_Analysis.py) | **80%** | Swept-sine signals, FFTs, transfer functions and filtering |
-| [Programming worksheets](Scientific_Worksheets.py) | **98% average** | Python and numerical problem solving |
+## Quantum systems — 95%
 
-## Try the public examples
+[Source code](Project_1_Quantum_Systems.py)
 
-![Bound-state energies for a finite square well and frequency-domain filtering of a synthetic signal](assets/scientific-python.png)
+I modelled the bound states of an electron in a finite square well, reformulating the Schrödinger equation into dimensionless even- and odd-parity equations. Numerical root finding gives the allowed energy eigenvalues and their dependence on the well parameters.
 
-The example uses a **1 nm, 10 eV finite well**, which has six bound states, and an **80 Hz signal with 320 Hz interference**. These are selected demonstration inputs. The signal is synthetic and its clean component is known, so the change in SNR can be calculated directly.
+The energy diagram below shows the six bound states for a 1 nm well with a 10 eV barrier.
 
-Use Python 3.12:
+## Spectral analysis — 80%
 
-```bash
-git clone https://github.com/Robert-Study/Scientific-Python-Projects.git
-cd Scientific-Python-Projects
-python -m venv .venv
-```
+[Source code](Project_2_Spectral_Analysis.py)
 
-Activate with `source .venv/bin/activate` on macOS/Linux, or `.venv\Scripts\Activate.ps1` in Windows PowerShell. Then:
+I used swept-sine signals and Fourier analysis to identify the behaviour of unknown electronic filters, locate unwanted spectral components and reconstruct filtered signals through a custom transfer function.
 
-```bash
-python -m pip install -r requirements.txt
-python demo.py
-python -m unittest discover -s tests -v
-```
+![Finite-well energy levels and a signal-processing illustration with broadband noise and multiple interfering frequencies](assets/scientific-python.png)
 
-The plot, signal CSV and numerical results are saved to `outputs/demo/`. A [saved result](assets/results.json) is included for comparison. The quantum script can also be run directly:
+*Computational illustrations: finite-well energy levels, and a three-component signal with broadband noise and three interfering tones. The filtering panel combines notch and low-pass filtering; the noise trace is generated for this figure.*
 
-```bash
-python Project_1_Quantum_Systems.py
-```
+## Self-landing rockets — 90%, cohort highest
 
-## What can be reproduced
+[Source code](Project_3_Self_Landing_Rockets.py)
 
-| Component | Available here |
-| --- | --- |
-| Finite-well solver | All bound-state roots for the selected parameters, bracketed between successive half-periods |
-| Signal-processing helpers | Linear frequency sweeps, one-sided spectra and frequency-domain filtering |
-| Standalone demonstration | Quantum energies and filtering of a known synthetic signal |
-| Original audio/filter-box exercise | Requires the university's `module_engine` package and its supplied data |
-| Original rocket exercise | Requires the university's `module_engine` simulator |
-| Worksheets | Some file-based exercises require the original `data.txt` |
+I investigated a two-dimensional rocket simulator, using numerical experiments to identify its dynamics before constructing positioning and landing controllers. The work covered thruster offsets, mass and thrust estimates, acceleration-to-thrust mapping, proportional feedback and damped PD-style control using position and velocity.
 
-The university package is not distributed here. Its absence does not prevent importing the numerical helpers or running `demo.py`. The rocket results are not presented as a public, independently reproducible landing benchmark.
+## Programming worksheets — 98% average, cohort highest
 
-## Numerical checks
+[Source code](Scientific_Worksheets.py)
 
-The test suite compares the well energies with a separate finite-difference Hamiltonian calculation. It also checks the swept-sine phase against SciPy's `chirp`, verifies removal of a tone at the filter's notch frequency, and checks the Nyquist bin and sampling assumptions.
+Six worksheets covering scientific Python and numerical methods: complex arithmetic, sequences and series, conditional probability, nuclear binding energies, bisection, lattice sums, stellar data, electrostatic fields and Monte Carlo simulation.
 
-The sweep phase is the integral of the instantaneous frequency. Using `sin(2π f(t)t)` for a changing frequency would give the wrong ramp. The well solver likewise avoids tangent poles when bracketing roots.
+The consolidated source separates calculations from plots and uses named functions for reusable methods. Dice sampling and random walks use vectorised array operations; physical quantities and input units are documented alongside the calculations.
 
-[View the tests](tests/test_numerics.py) · [GitHub Actions](https://github.com/Robert-Study/Scientific-Python-Projects/actions)
+**Methods:** Python, NumPy, SciPy, Matplotlib, numerical root finding, Fourier analysis, transfer functions, feedback control and scientific visualisation.
 
-The marks refer to the original assessed submissions. The standalone examples, root bracketing and signal-generation corrections were added during later portfolio development.
+The marks refer to the assessed coursework. This repository collects the work as a portfolio, with later improvements to clarity and numerical implementation.
