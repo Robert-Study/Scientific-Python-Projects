@@ -2,6 +2,18 @@
 
 Assessed computational-physics work from my degree at the University of Birmingham, covering **quantum mechanics, Fourier analysis, signal processing and feedback control**.
 
+## Self-landing rockets
+
+**90%, highest in the cohort** · [Source code](projects/Project_3_Self_Landing_Rockets.py)
+
+I investigated a two-dimensional rocket simulator, using numerical experiments to identify its dynamics before constructing positioning and landing controllers. The work covered thruster offsets, mass and thrust estimates, acceleration-to-thrust mapping, proportional feedback and damped PD-style control using position and velocity.
+
+The analysis separates the initial identification experiments from the control strategies and repeated drop tests. The controller combines position error with velocity feedback to reduce overshoot.
+
+<img src="rocket-control.png" width="660" alt="Horizontal rocket control: position feedback compared with damped feedback">
+
+*Horizontal positioning in the supplied rocket simulator: adding velocity feedback damps the oscillations around a 100 m target. A fresh run of the coursework controllers.*
+
 ## Quantum systems
 
 **95%** · [Source code](projects/Project_1_Quantum_Systems.py)
@@ -29,18 +41,6 @@ The course files supply real speech recordings and a generator for the interferi
 The noise model is a deliberately severe coursework test. The reported reference SNR includes both remaining noise and distortion of the clean signal. It describes this re-analysis, rather than an archived score from the assessed submission.
 
 The source recordings were sampled at 44.1 kHz. The included analysis data use 11.025 kHz after anti-alias filtering and downsampling. Input arrays, source information and numerical outputs are in `data/`.
-
-## Self-landing rockets
-
-**90%, highest in the cohort** · [Source code](projects/Project_3_Self_Landing_Rockets.py)
-
-I investigated a two-dimensional rocket simulator, using numerical experiments to identify its dynamics before constructing positioning and landing controllers. The work covered thruster offsets, mass and thrust estimates, acceleration-to-thrust mapping, proportional feedback and damped PD-style control using position and velocity.
-
-The analysis separates the initial identification experiments from the control strategies and repeated drop tests. The controller combines position error with velocity feedback to reduce overshoot.
-
-<img src="rocket-control.png" width="660" alt="Horizontal rocket control: position feedback compared with damped feedback">
-
-*Horizontal positioning in the supplied rocket simulator: adding velocity feedback damps the oscillations around a 100 m target. A fresh run of the coursework controllers.*
 
 ## Programming worksheets
 
