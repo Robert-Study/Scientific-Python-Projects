@@ -12,7 +12,21 @@ The analysis separates the initial identification experiments from the control s
 
 <img src="rocket-control.png" width="660" alt="Horizontal rocket control: position feedback compared with damped feedback">
 
-*Horizontal positioning in the supplied rocket simulator: adding velocity feedback damps the oscillations around a 100 m target. A fresh run of the coursework controllers.*
+*Horizontal positioning in the supplied rocket simulator: adding velocity feedback damps the oscillations around a 100 m target*
+
+## Programming worksheets
+
+**98% average, highest in the cohort** · [Source code](projects/Scientific_Worksheets.py)
+
+Six worksheets cover complex arithmetic, sequences and series, conditional probability, nuclear binding energies, bisection, lattice sums, stellar data, electrostatic fields and Monte Carlo simulation.
+
+<img src="scientific-worksheets.png" width="660" alt="Dice probabilities, binding energies, lattice sums and electric fields">
+
+*Figures calculated from the worksheet methods: exact and Monte Carlo dice probabilities, binding-energy searches, finite lattice sums and point-charge field directions.*
+
+The dice calculation compares **200,000 trials** with all **1,296 possible four-die outcomes**. The nuclear calculation searches integer mass numbers for each atomic number. The Madelung calculation sums the lattice in finite cubes, while the electrostatic calculation uses the vector form of Coulomb's law.
+
+The consolidated source separates calculations from plots and gives reusable methods named functions. Dice sampling and random walks use vectorised arrays. Input validation, units and singular points are handled in the relevant numerical routines.
 
 ## Quantum systems
 
@@ -42,21 +56,6 @@ The noise model is a deliberately severe coursework test. The reported reference
 
 The source recordings were sampled at 44.1 kHz. The included analysis data use 11.025 kHz after anti-alias filtering and downsampling. Input arrays, source information and numerical outputs are in `data/`.
 
-## Programming worksheets
-
-**98% average, highest in the cohort** · [Source code](projects/Scientific_Worksheets.py)
-
-Six worksheets cover complex arithmetic, sequences and series, conditional probability, nuclear binding energies, bisection, lattice sums, stellar data, electrostatic fields and Monte Carlo simulation.
-
-<img src="scientific-worksheets.png" width="660" alt="Dice probabilities, binding energies, lattice sums and electric fields">
-
-*Figures calculated from the worksheet methods: exact and Monte Carlo dice probabilities, binding-energy searches, finite lattice sums and point-charge field directions.*
-
-The dice calculation compares **200,000 trials** with all **1,296 possible four-die outcomes**. The nuclear calculation searches integer mass numbers for each atomic number. The Madelung calculation sums the lattice in finite cubes, while the electrostatic calculation uses the vector form of Coulomb's law.
-
-The consolidated source separates calculations from plots and gives reusable methods named functions. Dice sampling and random walks use vectorised arrays. Input validation, units and singular points are handled in the relevant numerical routines.
-
-The supplied archives contain the Y2 assignment templates and backend materials. The original dice-observation and stellar-catalogue files for the worksheets were not among them, so those file-based routines remain available without invented observations.
 
 ## Files and methods
 
@@ -68,5 +67,3 @@ The supplied archives contain the Y2 assignment templates and backend materials.
 All project figures are separate top-level PNGs. `projects/make_figures.py` records how each is produced. The raw course backend is university-supplied; the dependency is noted in `requirements.txt`.
 
 **Tools:** Python, NumPy, SciPy and Matplotlib.
-
-The marks refer to the assessed coursework. The figures show the calculations and re-analysis described above, with later improvements to code clarity and numerical implementation.
