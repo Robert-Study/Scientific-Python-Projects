@@ -28,18 +28,6 @@ The dice calculation compares **200,000 trials** with all **1,296 possible four-
 
 The consolidated source separates calculations from plots and gives reusable methods named functions. Dice sampling and random walks use vectorised arrays. Input validation, units and singular points are handled in the relevant numerical routines.
 
-## Quantum systems
-
-**95%** · [Source code](projects/Project_1_Quantum_Systems.py)
-
-I modelled the bound states of an electron in a finite square well, reformulating the Schrödinger equation into dimensionless even- and odd-parity equations. Bracketed numerical root finding gives the allowed energy eigenvalues.
-
-<img src="quantum-energy-levels.png" width="560" alt="Calculated finite-well energy levels">
-
-*Six bound states calculated for a 1 nm well with a 10 eV barrier.*
-
-The calculation locates roots between successive half-periods without crossing tangent poles, then converts the dimensionless solutions into energies. The potential and energy levels make the connection between the numerical roots and the physical states visible.
-
 ## Spectral analysis
 
 **80%** · [Source code](projects/Project_2_Spectral_Analysis.py)
@@ -55,6 +43,20 @@ The course files supply real speech recordings and a generator for the interferi
 The noise model is a deliberately severe coursework test. The reported reference SNR includes both remaining noise and distortion of the clean signal. It describes this re-analysis, rather than an archived score from the assessed submission.
 
 The source recordings were sampled at 44.1 kHz. The included analysis data use 11.025 kHz after anti-alias filtering and downsampling. Input arrays, source information and numerical outputs are in `data/`.
+
+
+## Quantum systems
+
+**95%** · [Source code](projects/Project_1_Quantum_Systems.py)
+
+I modelled the bound states of an electron in a finite square well, reformulating the Schrödinger equation into dimensionless even- and odd-parity equations. Bracketed numerical root finding gives the allowed energy eigenvalues.
+
+<img src="quantum-energy-levels.png" width="560" alt="Calculated finite-well energy levels">
+
+*Six bound states calculated for a 1 nm well with a 10 eV barrier.*
+
+The calculation locates roots between successive half-periods without crossing tangent poles, then converts the dimensionless solutions into energies. The potential and energy levels make the connection between the numerical roots and the physical states visible.
+
 
 
 ## Files and methods
